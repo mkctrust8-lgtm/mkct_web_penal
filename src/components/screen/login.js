@@ -356,7 +356,7 @@ const LoginPage = () => {
           <div style={{ width: '100%' }}>
             {[
               { icon: <IconPin />, text: <span>लाखणी-थराद हाईवे, लाखणी, <strong style={{ color: '#2a1a0a' }}>बनासकांठा (थराद)</strong></span> },
-              { icon: <IconPhone />, text: <span><strong style={{ color: '#2a1a0a' }}>9979627618</strong> / <strong style={{ color: '#2a1a0a' }}>9320387645 / 9725823111 / 9076970217</strong> / 9924663176</span> },
+              { icon: <IconPhone />, text: <span><strong style={{ color: '#2a1a0a' }}></strong> / <strong style={{ color: '#2a1a0a' }}>9320387645 / 9725823111 / 9076970217</strong> </span> },
               { icon: <IconPerson />, text: <span>अध्यक्ष: <strong style={{ color: '#2a1a0a' }}>धीरजभाई एस. मोदी,सुरेशभाई एच. मोदी</strong></span> },
             ].map((row, i) => (
               <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12, color: '#6b5a3e', lineHeight: 1.5, marginBottom: 8 }}>
