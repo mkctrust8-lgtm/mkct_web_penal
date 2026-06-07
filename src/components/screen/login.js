@@ -7,6 +7,7 @@ import { getDeviceInfo } from '@/lib/commonFun';
 import { doc, setDoc } from 'firebase/firestore';
 import Image from 'next/image';
 import { TrsutData } from '@/lib/constentData';
+import logo from '@/app/api/helperfile/Images/logo';
 
 const OTP_TIMEOUT = 60;
 const OTP_VALIDITY_DAYS = 7;
@@ -333,14 +334,14 @@ const LoginPage = () => {
           <div className="lp-mandala" style={{ width: 176, height: 176, borderRadius: '50%', border: '2px solid #d4af37', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', marginBottom: '1.5rem' }}>
             <div style={{ width: 118, height: 118, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
               {/* <span style={{ fontFamily: "'Noto Sans Devanagari', sans-serif", fontSize: '2.6rem', color: '#d4af37', lineHeight: 1 }}>ॐ</span> */}
-              <Image src={"/Images/logormImg.png"} alt="Trust Logo" width={80} height={80} style={{ width: '100%', height: "100%", borderRadius: 8, boxShadow: '0 4px 12px rgba(212,175,55,0.3)' }} />
+              <Image src={logo} alt="Trust Logo" width={80} height={80} style={{ width: '100%', height: "100%", borderRadius: 8, boxShadow: '0 4px 12px rgba(212,175,55,0.3)' }} />
             </div>
           </div>
 
           {/* Trust name */}
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontFamily: "'Noto Sans Devanagari', sans-serif", fontSize: '1.05rem', fontWeight: 600, color: '#1a0f5e', lineHeight: 1.4 }}>श्री वासुदेव जनसेवा</div>
-            <div style={{ fontFamily: "'Noto Sans Devanagari', sans-serif", fontSize: '1.05rem', fontWeight: 600, color: '#1a0f5e', lineHeight: 1.4 }}>एजुकेशन एंड चैरिटेबल ट्रस्ट</div>
+            <div style={{ fontFamily: "'Noto Sans Devanagari', sans-serif", fontSize: '1.05rem', fontWeight: 600, color: '#1a0f5e', lineHeight: 1.4 }}>मानव कल्याण</div>
+            <div style={{ fontFamily: "'Noto Sans Devanagari', sans-serif", fontSize: '1.05rem', fontWeight: 600, color: '#1a0f5e', lineHeight: 1.4 }}>चेरिटेबल ट्रस्ट (थराद)</div>
             <div style={{ fontSize: 11, color: '#6b5a3e', letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 4 }}>गुजरात · राजस्थान</div>
           </div>
 
@@ -354,9 +355,9 @@ const LoginPage = () => {
           {/* Info rows */}
           <div style={{ width: '100%' }}>
             {[
-              { icon: <IconPin />, text: <span>लाखणी-थराद हाईवे, लाखणी, <strong style={{ color: '#2a1a0a' }}>बनासकांठा (वाव-थराद)</strong></span> },
-              { icon: <IconPhone />, text: <span><strong style={{ color: '#2a1a0a' }}>9979627618</strong> / <strong style={{ color: '#2a1a0a' }}>9724133283</strong> / 9924663176</span> },
-              { icon: <IconPerson />, text: <span>अध्यक्ष: <strong style={{ color: '#2a1a0a' }}>उत्तमसिंह डी. राजपूत</strong></span> },
+              { icon: <IconPin />, text: <span>लाखणी-थराद हाईवे, लाखणी, <strong style={{ color: '#2a1a0a' }}>बनासकांठा (थराद)</strong></span> },
+              { icon: <IconPhone />, text: <span><strong style={{ color: '#2a1a0a' }}>9979627618</strong> / <strong style={{ color: '#2a1a0a' }}>9320387645 / 9725823111 / 9076970217</strong> / 9924663176</span> },
+              { icon: <IconPerson />, text: <span>अध्यक्ष: <strong style={{ color: '#2a1a0a' }}>धीरजभाई एस. मोदी,सुरेशभाई एच. मोदी</strong></span> },
             ].map((row, i) => (
               <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12, color: '#6b5a3e', lineHeight: 1.5, marginBottom: 8 }}>
                 <span style={{ flexShrink: 0, marginTop: 1, color: '#EA1F25' }}>{row.icon}</span>
@@ -367,11 +368,13 @@ const LoginPage = () => {
 
           {/* Reg badge */}
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#f9f0d0', border: '1px solid rgba(212,175,55,0.4)', borderRadius: 4, padding: '0.28rem 0.75rem', fontSize: 11, color: '#543f27', fontWeight: 700, letterSpacing: '0.06em', marginTop: 12 }}>
-            <IconShield /> रजि. नं. Guj/7039/BK
+            <IconShield /> रजि. नं. F /7141/B.K / 2025
           </div>
 
           <div style={{ fontFamily: "'Noto Sans Devanagari', sans-serif", fontSize: 12, color: 'rgba(26,15,94,0.5)', textAlign: 'center', marginTop: 16 }}>
-            ॥ श्री गणेशाय नमः ॥ &nbsp; ॥ जय माताजी ॥
+             ॥ ॐ जय श्री शामलाजी नमः ॥
+        ॥ ॐ जय श्री गणेशाय नमः ॥
+        ॥ ॐ जय श्री कुलदेवी माताय नमः ॥
           </div>
         </div>
 
