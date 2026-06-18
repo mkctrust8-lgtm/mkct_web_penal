@@ -129,6 +129,9 @@ const MemberList = () => {
     const [draftJoinFees,        setDraftJoinFees]        = useState('all');
 
     const [JoinFeesMemberListOpen, setJoinFeesMemberListOpen] = useState(false);
+    
+    const [isCertDownloading, setIsCertDownloading] = useState(false);
+
 
     const dispatch           = useDispatch();
     const memberStatusChange = useSelector(s => s.data.getMemberDataChange);
@@ -440,7 +443,61 @@ const MemberList = () => {
             }
         },
     ];
-console.log()
+  const downloadMultipleCertificates = async (membersArray, selectedProgram) => {
+        if (!membersArray || membersArray.length === 0) {
+            message.warning('No members selected for certificate download');
+            return;
+        }
+
+        setIsCertDownloading(true);
+        const loadingMessage = message.loading('Generating certificates, please wait...', 0);
+
+        const membersData = membersArray.map(member => ({
+            ...member,
+            agentPhone: agentsList?.find(a => a.id === member.agentId)?.phone || 'N/A'
+        }));
+
+        try {
+            const response = await fetch('/api/certificate-send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    memberData: membersData,
+                    selectedProgram: selectedProgram
+                }),
+            });
+
+            const data = await response.json();
+            
+            const binaryString = atob(data.base64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            
+            const blob = new Blob([bytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            
+            // Open in new tab instead of downloading
+            window.open(url, '_blank');
+            
+            // Clean up after a delay
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+            }, 100);
+            
+            message.success('Certificate generated successfully!');
+            
+        } catch (error) {
+            console.error('Error:', error);
+            message.error('Failed to generate certificates. Please try again.');
+        } finally {
+            loadingMessage();
+            setIsCertDownloading(false);
+        }
+    };
     // ── render ─────────────────────────────────────────────────────────────────
     return (
         <div>
@@ -509,6 +566,15 @@ console.log()
                     onClick={() => setJoinFeesMemberListOpen(true)}
                     >
                         Join Fees List
+                    </Button>
+                     <Button
+                        icon={<FilePdfOutlined />}
+                        onClick={() => downloadMultipleCertificates(filteredMembersData, selectedProgram)}
+                        loading={isCertDownloading}
+                        disabled={isCertDownloading || filteredMembersData.length === 0}
+                        className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-green-50 border-green-300 text-green-600 hover:bg-green-100 hover:border-green-400 font-medium"
+                    >
+                        {isCertDownloading ? 'Generating...' : 'Download Certificates'}
                     </Button>
                     <Button
                         icon={<FilePdfOutlined />}

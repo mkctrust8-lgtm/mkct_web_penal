@@ -136,6 +136,7 @@ const styles = StyleSheet.create({
   formSection: {
     marginTop:12,
     paddingHorizontal: 5,
+    position: 'relative',
   },
   row: {
     flexDirection: 'row',
@@ -317,12 +318,42 @@ feesValue: {
   color: '#000',
   fontWeight: 'bold',
 },
+regNoBox:{
+  position:'absolute',
+  top:-30,
+  left:5,
+  flexDirection:'row',
+  alignItems:'center',
+},
+JoinDateBox:{
+   position:'absolute',
+  top:-30,
+  right:20,
+  flexDirection:'row',
+  alignItems:'center',
+  minWidth: 60,
+},
+labelJoinDate:{
+  fontSize: 11,
+    color: '#333',
+    marginRight: 4,
+    fontWeight: '600',
+    textAlign: 'left',
+},
+valueJoinDate:{
+  fontSize: 11,
+    color: '#000',
+    fontWeight: 'bold',
+    textAlign: 'left',
+    // borderBottom: '1px dotted #000',
+    textTransform:'capitalize',
+    // borderBottom:'1px dotted #000',
+}
 
 });
 
-const CertificateComServerSide = ({data,selectedProgram}) => (
-  <Document>
-    <Page size={{ width: '210mm', height: '148mm' }} style={styles.page}>
+const Certificate = ({data,selectedProgram}) => (
+      <Page size={{ width: '210mm', height: '148mm' }} style={styles.page}>
    
         <View style={styles.outerBorder}>
            <Image src={TrsutData.frameImg}style={{
@@ -386,6 +417,14 @@ const CertificateComServerSide = ({data,selectedProgram}) => (
               </View>
           {/* Form Section */}
           <View style={styles.formSection}>
+            <view style={styles.regNoBox}>
+            <Text style={styles.labelJoinDate}>पंजीकरण संख्या : </Text>
+            <Text style={styles.valueJoinDate}>{data?.registrationNumber}</Text>
+            </view>
+                    <view style={styles.JoinDateBox}>
+            <Text style={styles.labelJoinDate}>दिनांक : </Text>
+            <Text style={styles.valueJoinDate}>{data?.dateJoin}</Text>
+            </view>
             <View style={styles.row}>
                   <view style={styles.fieldGroup}>
                     <Text style={styles.label}>नाम</Text>
@@ -508,7 +547,21 @@ const CertificateComServerSide = ({data,selectedProgram}) => (
       
       </View>
     </Page>
+)
+
+const CertificateComServerSide = ({data,selectedProgram}) => {
+    const membersArray = Array.isArray(data) ? data : [data];
+  return(
+  <Document>
+ {membersArray.map((member, index) => (
+        <Certificate 
+          key={member?.id || member?.registrationNumber || index}
+          data={member}
+          selectedProgram={selectedProgram}
+          index={index}
+        />
+      ))}
   </Document>
-);
+);}
 
 export default CertificateComServerSide;
