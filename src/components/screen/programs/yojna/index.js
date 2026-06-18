@@ -20,6 +20,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import AddProgramEdit from '@/components/common/program/AddProgramEdit';
 import { deleteProgram, updateProgram } from '@/lib/services/firebaseService';
 import AddProgram from '@/components/common/program';
+import { setPrograms } from '@/redux/slices/commonSlice';
+// Import your Redux action
 
 const { Panel } = Collapse;
 const { Meta } = Card;
@@ -34,10 +36,12 @@ const Programs = () => {
   const [filteredData, setFilteredData] = useState(programsList);
   const [editDrawerVisible, setEditDrawerVisible] = useState(false);
   const [programToEdit, setProgramToEdit] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(()=>{
-    setFilteredData(programsList)
-  },[programsList])
+  useEffect(() => {
+    setFilteredData(programsList);
+  }, [programsList]);
+
   const handleSearch = (value) => {
     setSearchText(value);
     const filtered = programsList.filter(program =>
@@ -60,29 +64,74 @@ const Programs = () => {
     setEditDrawerVisible(true);
   };
 
+  // FIXED: Proper delete function with Redux state update
   const handleDelete = async (programId) => {
     try {
-      // Call delete service
+      setIsDeleting(true);
+      
+      // Delete from Firebase
       await deleteProgram(programId);
+      
+      // Update Redux state by filtering out the deleted program
+      const updatedPrograms = programsList.filter(program => program.id !== programId);
+      dispatch(setPrograms(updatedPrograms));
+      
+      // Also update filtered data if search is active
+      if (searchText) {
+        const updatedFiltered = updatedPrograms.filter(program =>
+          program.name.toLowerCase().includes(searchText.toLowerCase()) ||
+          program.about.toLowerCase().includes(searchText.toLowerCase()) ||
+          program.locationGroups.some(loc => 
+            loc.location.toLowerCase().includes(searchText.toLowerCase())
+          )
+        );
+        setFilteredData(updatedFiltered);
+      } else {
+        setFilteredData(updatedPrograms);
+      }
+      
       message.success('Program deleted successfully!');
-      // Refresh programs list or update state
+      
     } catch (error) {
       console.error('Error deleting program:', error);
-      message.error('Failed to delete program.');
+      message.error('Failed to delete program. Please try again.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
+  // Alternative: If you have a fetchPrograms function, you can refetch
+  // const fetchPrograms = async () => {
+  //   const programs = await getPrograms();
+  //   dispatch(setPrograms(programs));
+  // };
+
+  // const handleDelete = async (programId) => {
+  //   try {
+  //     setIsDeleting(true);
+  //     await deleteProgram(programId);
+  //     await fetchPrograms(); // Refetch the entire list
+  //     message.success('Program deleted successfully!');
+  //   } catch (error) {
+  //     console.error('Error deleting program:', error);
+  //     message.error('Failed to delete program.');
+  //   } finally {
+  //     setIsDeleting(false);
+  //   }
+  // };
+
   const handleSetSelected = async (programId) => {
     try {
-      // Update the program to be selected
       await updateProgram(programId, { isSelected: true });
       
-      // Set all other programs to isSelected: false
-      programsList.forEach(async (program) => {
-        if (program.id !== programId) {
-          await updateProgram(program.id, { isSelected: false });
-        }
-      });
+      // Update all other programs in Redux
+      const updatedPrograms = programsList.map(program => ({
+        ...program,
+        isSelected: program.id === programId
+      }));
+      
+      dispatch(setPrograms(updatedPrograms));
+      setFilteredData(updatedPrograms);
       
       message.success('Program set as selected!');
     } catch (error) {
@@ -316,11 +365,10 @@ const Programs = () => {
               <p className="text-gray-600">Manage and view all program configurations</p>
             </div>
             <div className="flex items-center gap-3">
-             <AddProgram/>
+              <AddProgram/>
               <AddProgramEdit />
             </div>
           </div>
-
         </div>
 
         {/* Programs Grid */}
@@ -353,12 +401,14 @@ const Programs = () => {
                     onConfirm={() => handleDelete(program.id)}
                     okText="Yes"
                     cancelText="No"
+                    okButtonProps={{ loading: isDeleting }}
                   >
                     <Button 
                       type="text" 
                       danger 
                       icon={<DeleteOutlined />}
                       key="delete"
+                      disabled={isDeleting}
                     >
                       Delete
                     </Button>
@@ -408,8 +458,6 @@ const Programs = () => {
                     </div>
                   </div>
 
-         
-
                   <div className="bg-gray-50 p-3 rounded-lg">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">
@@ -434,7 +482,6 @@ const Programs = () => {
                     {program.locationGroups.length > 2 && (
                       <Tag color="default">+{program.locationGroups.length - 2} more</Tag>
                     )}
-           
                   </div>
                 </div>
               </Card>
@@ -481,7 +528,7 @@ const Programs = () => {
             </Button>,
           ]}
           width={900}
-        destroyOnHidden
+          destroyOnHidden
         >
           <Tabs items={tabItems} />
         </Modal>
