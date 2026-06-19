@@ -418,7 +418,7 @@ const Certificate = ({data,selectedProgram}) => (
           {/* Form Section */}
           <View style={styles.formSection}>
             <view style={styles.regNoBox}>
-            <Text style={styles.labelJoinDate}>पंजीकरण संख्या : </Text>
+            <Text style={styles.labelJoinDate}> सदस्यता क्रमांक : </Text>
             <Text style={styles.valueJoinDate}>{data?.registrationNumber}</Text>
             </view>
                     <view style={styles.JoinDateBox}>
