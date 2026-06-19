@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   formSection: {
-    marginTop:12,
+    marginTop:10,
     paddingHorizontal: 5,
     position: 'relative',
   },
@@ -287,7 +287,6 @@ const styles = StyleSheet.create({
   },
   DashBorder:{
     borderBottom: '1px dashed #d4af37',
-    marginVertical: 5,
   },
 FeesSection: {
   flexDirection: 'row',
