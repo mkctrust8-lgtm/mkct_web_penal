@@ -347,6 +347,12 @@ valueJoinDate:{
     // borderBottom: '1px dotted #000',
     textTransform:'capitalize',
     // borderBottom:'1px dotted #000',
+},
+agentCode:{
+      fontSize: 9.5,
+    color: '#ef4444',
+    marginTop:5,
+    fontWeight: 'bold',
 }
 
 });
@@ -532,7 +538,13 @@ const Certificate = ({data,selectedProgram}) => (
            
                 <View style={styles.leftFooter}>
               <Text style={styles.footerValue}>{data?.addedByName || '---'} ({data.agentPhone})</Text>
+              <View style={{
+                flexDirection:'row',
+                
+              }}>
               <Text style={styles.footerLabel}>कार्यकर्ता </Text>
+              <Text style={styles.agentCode}>{data?.agentCode ?` (${data?.agentCode})`:null}</Text>
+                </View>
             </View>
              <View style={styles.rightFooter}>
            <Text style={styles.footerValue}>

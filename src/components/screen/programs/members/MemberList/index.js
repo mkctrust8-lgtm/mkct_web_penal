@@ -454,7 +454,8 @@ const MemberList = () => {
 
         const membersData = membersArray.map(member => ({
             ...member,
-            agentPhone: agentsList?.find(a => a.id === member.agentId)?.phone || 'N/A'
+            agentPhone: agentsList?.find(a => a.id === member.agentId)?.phone || 'N/A',
+            agentCode: agentsList?.find(a => a.id === member.agentId)?.agentCode
         }));
 
         try {

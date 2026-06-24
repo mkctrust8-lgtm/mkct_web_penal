@@ -43,14 +43,14 @@ const MemberCertificateCom = ({
                 borderRadius:"4px",
                 fontSize:"16px",
                 cursor:"pointer",
-            }} fileName={fileName} document={<CertificateServerSide data={{...memberData,agentPhone:memberAgent?.phone}} selectedProgram={selectedProgram} />} >
+            }} fileName={fileName} document={<CertificateServerSide data={{...memberData,agentPhone:memberAgent?.phone,agentCode:memberAgent?.agentCode}} selectedProgram={selectedProgram} />} >
                 Download Pdf
             </PDFDownloadLink>
          
           </Space>
         }
       > 
-      <CertificateViewer memberData={{...memberData,agentPhone:memberAgent?.phone}} selectedProgram={selectedProgram}/>
+      <CertificateViewer memberData={{...memberData,agentPhone:memberAgent?.phone,agentCode:memberAgent?.agentCode}} selectedProgram={selectedProgram}/>
       </Drawer>
     </div>
   )
