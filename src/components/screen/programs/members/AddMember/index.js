@@ -575,6 +575,7 @@ const [closingDays, setClosingDays] = useState(null);
         phone: values.phone,
         phoneAlt: values.phoneAlt || '',
         aadhaarNo: values.aadhaarNo,
+        applicationNumber: values.applicationNumber || "",
         bobDate: values.bobDate.format('DD-MM-YYYY'),
         currentAddress: values.currentAddress,
         village: values.village,
@@ -864,6 +865,11 @@ joinFeesRemainingAmount: values?.joinFeesPaymentType === 'custom' && values?.cus
                 <Divider orientation="left">व्यक्तिगत जानकारी</Divider>
 
                 <Row gutter={16}>
+                  <Col span={8}>
+                    <Form.Item name="applicationNumber" label="Application Number">
+                      <Input placeholder="Optional" />
+                    </Form.Item>
+                  </Col>
                   <Col span={8}>
                     <Form.Item
                       name="displayName"

@@ -239,7 +239,8 @@ useEffect(() => {
       selectedAgent: memberData.agentId || undefined,
       joinFeesDone: joinFeesDoneStatus,
       joinFeesPaymentType: joinFeesPaymentType,
-      joinFeesTxtId: memberData?.joinFeesTxtId || ""
+      joinFeesTxtId: memberData?.joinFeesTxtId || "",
+      applicationNumber: memberData.applicationNumber || "",
     };
 
     // Add custom join fees amount if applicable
@@ -469,6 +470,7 @@ console.log(values,'values')
         phone: values.phone,
         phoneAlt: values.phoneAlt || '',
         aadhaarNo: values.aadhaarNo,
+        applicationNumber: values.applicationNumber || "",
         bobDate: values.bobDate.format('DD-MM-YYYY'),
         currentAddress: values.currentAddress,
         village: values.village,
@@ -638,6 +640,11 @@ console.log(values,'values')
             <Divider orientation="left">व्यक्तिगत जानकारी</Divider>
 
             <Row gutter={16}>
+              <Col span={8}>
+                <Form.Item name="applicationNumber" label="Application Number">
+                  <Input placeholder="Optional" />
+                </Form.Item>
+              </Col>
               <Col span={8}>
                 <Form.Item
                   name="displayName"

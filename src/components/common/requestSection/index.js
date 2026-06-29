@@ -158,7 +158,8 @@ const showAcceptModal = (member) => {
     joinFeesDone: false,
     joinFeesPaymentType: undefined,
     customJoinFeesAmount: 1100,  // Add this line
-    joinFeesTxtId: undefined
+    joinFeesTxtId: undefined,
+    applicationNumber: member.applicationNumber || "",
   });
 };
 
@@ -212,6 +213,7 @@ const showAcceptModal = (member) => {
         joinFeesPaidAmount: joinFeesPaidAmount,
         joinFeesRemainingAmount: joinFeesRemainingAmount,
         dateJoin:currentMember.dateJoin || dayjs().format('DD-MM-YYYY'),
+        applicationNumber: values.applicationNumber || "",
         createdAt: new Date(),
         updatedAt: new Date(),
         approvedBy: user?.displayName || user?.email || 'Admin',
@@ -713,6 +715,9 @@ ${values.joinFeesDone ? `Join Fees: ₹${joinFeesPaidAmount}` : 'Join Fees: Pend
           ]}
         >
           <Form form={acceptForm} layout="vertical">
+            <Form.Item name="applicationNumber" label="Application Number">
+              <Input placeholder="Enter or leave blank to skip" />
+            </Form.Item>
             <Form.Item
               name="joinFeesDone"
               valuePropName="checked"

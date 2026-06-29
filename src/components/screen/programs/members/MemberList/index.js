@@ -332,6 +332,7 @@ const MemberList = () => {
             field: 'registrationNumber', headerName: 'Reg. Number', cellDataType: 'text',
             cellRenderer: ({ data }) => <div className="font-semibold">{data.registrationNumber || '—'}</div>
         },
+        { field: 'applicationNumber', headerName: 'App. Number', width: 110, cellDataType: 'text' },
         { field: 'phone', headerName: 'Phone', width: 120, cellDataType: 'text' },
         {
             field: 'gender', headerName: 'Gender', width: 100,
