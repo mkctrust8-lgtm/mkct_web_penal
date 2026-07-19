@@ -362,6 +362,15 @@ const MemberList = () => {
                     : <Tag color="red">Pending</Tag>
             )
         },
+        {
+            field: 'joinInOffer', headerName: 'Join Offer', width: 100,
+            cellRenderer: ({ data }) => {
+                const v = data.joinInOffer;
+                if (!v) return '—';
+                const map = { full: 'Full', half: 'Half', custom: 'Custom' };
+                return <Tag>{map[v] || v}</Tag>;
+            }
+        },
         { field: 'ageGroupRange', headerName: 'Age Group', width: 130, cellDataType: 'text' },
         {
             field: 'createdAt', headerName: 'Join Date', width: 130,

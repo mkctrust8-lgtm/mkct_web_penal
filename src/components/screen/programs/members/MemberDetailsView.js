@@ -300,7 +300,7 @@ function MemberDetailsView({isModalVisible, handleCloseModal, showDeleteConfirm,
                     <Descriptions.Item label="Registration Number">{selectedMember.registrationNumber}</Descriptions.Item>
                     <Descriptions.Item label="Name">{selectedMember.displayName}</Descriptions.Item>
                     <Descriptions.Item label="Father Name">{selectedMember.fatherName || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="Surname/Jati">{selectedMember.jati || '-'}</Descriptions.Item>
+                    {/* <Descriptions.Item label="Surname/Jati">{selectedMember.jati || '-'}</Descriptions.Item> */}
                     <Descriptions.Item label="Gotra">{selectedMember.gotra || '-'}</Descriptions.Item>
                     <Descriptions.Item label="Phone">{selectedMember.phone}</Descriptions.Item>
                     <Descriptions.Item label="Alternative Phone">{selectedMember.phoneAlt || '-'}</Descriptions.Item>
@@ -320,6 +320,14 @@ function MemberDetailsView({isModalVisible, handleCloseModal, showDeleteConfirm,
                 </Descriptions.Item>
                 <Descriptions.Item label="Join Fees">
                   <Tag color="blue" className="text-base font-bold">₹{selectedMember.joinFees || 0}</Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Join In Offer">
+                  <Tag color="geekblue">
+                    {selectedMember.joinInOffer === 'full' ? 'Full (100%)' :
+                     selectedMember.joinInOffer === 'half' ? 'Half (50%)' :
+                     selectedMember.joinInOffer === 'custom' ? 'Custom' :
+                     selectedMember.joinInOffer || '-'}
+                  </Tag>
                 </Descriptions.Item>
                 <Descriptions.Item label="Join Fees Status">
                   <Badge 

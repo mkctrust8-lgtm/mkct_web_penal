@@ -49,6 +49,7 @@ const EditMember = ({ memberData, programId, onSuccess, setOpen, open }) => {
   const [isJoinFeesDone, setIsJoinFeesDone] = useState(false);
   const [joinFeesPaymentType, setJoinFeesPaymentType] = useState(null);
   const [customJoinFeesAmount, setCustomJoinFeesAmount] = useState(0);
+  const [joinInOffer, setJoinInOffer] = useState(null);
 
   // Location group
   const [selectedLocationGroup, setSelectedLocationGroup] = useState(null);
@@ -241,6 +242,7 @@ useEffect(() => {
       joinFeesPaymentType: joinFeesPaymentType,
       joinFeesTxtId: memberData?.joinFeesTxtId || "",
       applicationNumber: memberData.applicationNumber || "",
+      joinInOffer: memberData.joinInOffer || undefined,
     };
 
     // Add custom join fees amount if applicable
@@ -487,6 +489,7 @@ console.log(values,'values')
         joinFeesDone: values.joinFeesDone || false,
         joinFeesTxtId: values.joinFeesTxtId || "",
         joinFeesPaymentType: values.joinFeesPaymentType || "",
+        joinInOffer: values.joinInOffer || "",
         joinFeesPaidAmount: joinFeesPaidAmount,
         joinFeesRemainingAmount: joinFeesRemainingAmount,
         addedBy: values.addedBy,
@@ -848,16 +851,24 @@ console.log(values,'values')
             <Divider orientation="left">नामांकन शुल्क</Divider>
             <Card size="small">
               <Row gutter={16}>
-                <Col span={24}>
+                <Col span={12}>
+                  <Form.Item name="joinInOffer" label="Join In Offer (Initial Commitment)">
+                    <Select placeholder="Select offer" onChange={setJoinInOffer}>
+                      <Option value="full">Full (₹{joinFees})</Option>
+                      <Option value="half">Half / 50% (₹{Math.round(joinFees / 2)})</Option>
+                      <Option value="custom">Custom Amount</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
                   <Form.Item name="joinFeesDone" valuePropName="checked">
                     <Checkbox onChange={(e) => {
                       setIsJoinFeesDone(e.target.checked);
                       if (!e.target.checked) {
-                        // Reset payment type and custom amount when unchecked
                         form.setFieldsValue({
                           joinFeesPaymentType: undefined,
                           customJoinFeesAmount: undefined,
-                          joinFeesTxtId: undefined
+                          joinFeesTxtId: undefined,
                         });
                         setJoinFeesPaymentType(null);
                         setCustomJoinFeesAmount(0);
@@ -884,14 +895,10 @@ console.log(values,'values')
                             setJoinFeesPaymentType(value);
                             if (value === 'full') {
                               setCustomJoinFeesAmount(joinFees);
-                              form.setFieldsValue({
-                                customJoinFeesAmount: joinFees
-                              });
+                              form.setFieldsValue({ customJoinFeesAmount: joinFees });
                             } else if (value === 'custom') {
                               setCustomJoinFeesAmount(0);
-                              form.setFieldsValue({
-                                customJoinFeesAmount: undefined
-                              });
+                              form.setFieldsValue({ customJoinFeesAmount: undefined });
                             }
                           }}
                         >
@@ -900,7 +907,8 @@ console.log(values,'values')
                         </Select>
                       </Form.Item>
                     </Col>
-
+                  </Row>
+                  <Row gutter={16}>
                     <Col span={12}>
                       {joinFeesPaymentType === 'custom' && (
                         <Form.Item

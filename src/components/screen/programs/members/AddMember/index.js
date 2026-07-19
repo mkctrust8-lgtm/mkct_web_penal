@@ -64,6 +64,7 @@ const AddMember = () => {
   const [extraFields, setExtraFields] = useState([]);
   const [joinFeesPaymentType, setJoinFeesPaymentType] = useState(null);
   const [customJoinFeesAmount, setCustomJoinFeesAmount] = useState(0);
+  const [joinInOffer, setJoinInOffer] = useState(null);
 
   // Indian states and districts
   const [districts, setDistricts] = useState([]);
@@ -593,9 +594,10 @@ const [closingDays, setClosingDays] = useState(null);
         locactionGroupId: selectedLocationGroup?.id || '',
         payAmount: payAmount,
         joinFees: joinFees,
-       joinFeesDone: values?.joinFeesDone || false,
+        joinFeesDone: values?.joinFeesDone || false,
 joinFeesTxtId: values?.joinFeesTxtId || "",
 joinFeesPaymentType: values?.joinFeesPaymentType || "",
+joinInOffer: values?.joinInOffer || "",
 joinFeesPaidAmount: values?.joinFeesPaymentType === 'custom' 
   ? (values?.customJoinFeesAmount || 0) 
   : (values?.joinFeesPaymentType === 'full' ? joinFees : 0),
@@ -1384,15 +1386,23 @@ joinFeesRemainingAmount: values?.joinFeesPaymentType === 'custom' && values?.cus
 <Divider orientation="left">नामांकन शुल्क</Divider>
 <Card size="small">
   <Row gutter={16}>
-    <Col span={24}>
+    <Col span={12}>
+      <Form.Item name="joinInOffer" label="Join In Offer (Initial Commitment)">
+        <Select placeholder="Select offer" onChange={setJoinInOffer}>
+          <Option value="full">Full (₹{joinFees})</Option>
+          <Option value="half">Half / 50% (₹{Math.round(joinFees / 2)})</Option>
+          <Option value="custom">Custom Amount</Option>
+        </Select>
+      </Form.Item>
+    </Col>
+    <Col span={12}>
       <Form.Item name="joinFeesDone" valuePropName="checked">
         <Checkbox onChange={(e) => {
           setIsJoinFeesDone(e.target.checked);
           if (!e.target.checked) {
-            // Reset payment type and custom amount when unchecked
             form.setFieldsValue({
               joinFeesPaymentType: undefined,
-              customJoinFeesAmount: undefined
+              customJoinFeesAmount: undefined,
             });
             setJoinFeesPaymentType(null);
             setCustomJoinFeesAmount(0);
@@ -1418,17 +1428,11 @@ joinFeesRemainingAmount: values?.joinFeesPaymentType === 'custom' && values?.cus
            onChange={(value) => {
   setJoinFeesPaymentType(value);
   if (value === 'full') {
-    // Set full amount when Full Paid is selected
     setCustomJoinFeesAmount(joinFees);
-    form.setFieldsValue({
-      customJoinFeesAmount: joinFees
-    });
+    form.setFieldsValue({ customJoinFeesAmount: joinFees });
   } else if (value === 'custom') {
-    // Set default amount 1100 when Custom is selected
     setCustomJoinFeesAmount(1100);
-    form.setFieldsValue({
-      customJoinFeesAmount: 1100
-    });
+    form.setFieldsValue({ customJoinFeesAmount: 1100 });
   }
 }}  
             >
