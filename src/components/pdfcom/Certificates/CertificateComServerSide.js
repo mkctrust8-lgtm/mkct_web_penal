@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     alignSelf: 'center',
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    marginTop: 20,
+    marginTop: 5,
   },
   schemeText: {
     fontSize: 11,
@@ -258,6 +258,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 2,
     width: '50%',
+    position: 'relative',
   },
   watermark: {
     position: 'absolute',
@@ -353,6 +354,11 @@ agentCode:{
     color: '#ef4444',
     marginTop:5,
     fontWeight: 'bold',
+},
+OfferJoinfees:{
+  position:'absolute',
+  bottom:0,
+  right:-150,
 }
 
 });
@@ -513,6 +519,19 @@ const Certificate = ({data,selectedProgram}) => (
                     <Text style={styles.label}> सहयोग राशि</Text>
                     <Text style={styles.colon}>:</Text>
                     <Text style={styles.value}>₹ {data?.payAmount} /-</Text>
+                  </view>
+                    <view style={[styles.fieldGroup,styles.OfferJoinfees]}>
+                    <Text style={styles.label}> जॉइन ऑफर</Text>
+                    <Text style={styles.colon}>:</Text>
+                    <Text style={styles.value}>
+                            {data?.joinInOffer === 'full'
+        ? 'Full (100%)'
+        : data?.joinInOffer === 'half'
+        ? 'Half (50%)'
+        : data?.joinInOffer === 'custom'
+        ? `₹ ${data?.joinInOfferCustomAmount || 0}`
+        : data?.joinInOffer || '-'}
+                    </Text>
                   </view>
             </View>
           </View>
