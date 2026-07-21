@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
-    marginBottom: 7,
+    marginBottom: 6,
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '80%',
@@ -408,7 +408,7 @@ const Certificate = ({data,selectedProgram}) => (
         
           </View> */}
        <View style={{
-        height:80,
+        height:100,
         width:'100%',
        }}>
 
