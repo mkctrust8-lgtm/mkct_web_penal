@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Button, Drawer, Select, Form, Input, DatePicker, Upload, Card, Row, Col, Divider, Space, Typography, App, Spin, Checkbox, Modal } from 'antd';
+import { Button, Drawer, Select, Form, Input, InputNumber, DatePicker, Upload, Card, Row, Col, Divider, Space, Typography, App, Spin, Checkbox, Modal } from 'antd';
 import {
   PlusOutlined,
   UserOutlined,
@@ -598,7 +598,8 @@ const [closingDays, setClosingDays] = useState(null);
 joinFeesTxtId: values?.joinFeesTxtId || "",
 joinFeesPaymentType: values?.joinFeesPaymentType || "",
 joinInOffer: values?.joinInOffer || "",
-joinFeesPaidAmount: values?.joinFeesPaymentType === 'custom' 
+joinInOfferCustomAmount: values?.joinInOffer === 'custom' ? (values?.joinInOfferCustomAmount || 0) : 0,
+joinFeesPaidAmount: values?.joinFeesPaymentType === 'custom'
   ? (values?.customJoinFeesAmount || 0) 
   : (values?.joinFeesPaymentType === 'full' ? joinFees : 0),
 joinFeesRemainingAmount: values?.joinFeesPaymentType === 'custom' && values?.customJoinFeesAmount 
@@ -1413,6 +1414,24 @@ joinFeesRemainingAmount: values?.joinFeesPaymentType === 'custom' && values?.cus
       </Form.Item>
     </Col>
   </Row>
+
+  {joinInOffer === 'custom' && (
+    <Row gutter={16} className="mt-2">
+      <Col span={12}>
+        <Form.Item
+          name="joinInOfferCustomAmount"
+          label="Join In Offer Custom Amount (₹)"
+          rules={[{ required: true, message: 'कृपया राशि दर्ज करें' }]}
+        >
+          <InputNumber
+            placeholder="Enter amount"
+            className="w-full"
+            min={1}
+          />
+        </Form.Item>
+      </Col>
+    </Row>
+  )}
 
   {isJoinFeesDone && (
     <>

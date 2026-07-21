@@ -4,7 +4,7 @@ import { getData, updateData } from '@/lib/services/firebaseService';
 import { useAuth } from '@/lib/AuthProvider';
 import { useDispatch, useSelector } from 'react-redux';
 import { UserOutlined, PhoneOutlined, HomeOutlined, FileOutlined, CalendarOutlined, MailOutlined, IdcardOutlined, EnvironmentOutlined, ContactsOutlined, DollarOutlined, FilePdfOutlined, LockOutlined, EyeOutlined, DownloadOutlined, SearchOutlined } from '@ant-design/icons';
-import { Drawer, Button, Input, Modal, Card, Avatar, Tabs, Descriptions, Image as AntImage, Spin, Empty, Typography, Form, Checkbox, Tooltip, Tag, Popconfirm, Badge, Divider, App, Select, Radio, Row, Col } from 'antd';
+import { Drawer, Button, Input, InputNumber, Modal, Card, Avatar, Tabs, Descriptions, Image as AntImage, Spin, Empty, Typography, Form, Checkbox, Tooltip, Tag, Popconfirm, Badge, Divider, App, Select, Radio, Row, Col } from 'antd';
 import MemberDetailsView from '@/components/screen/programs/members/MemberDetailsView';
 import EditMember from '@/components/screen/programs/members/EditMember';
 import dayjs from 'dayjs';
@@ -28,12 +28,14 @@ const RequestSection = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [acceptLoading, setAcceptLoading] = useState(false);
   const [rejectLoading, setRejectLoading] = useState(false);
+  const [requestFilter, setRequestFilter] = useState('pending');
   const { message } = App.useApp();
 
   // Join Fees states for accept modal
   const [joinFeesPaymentType, setJoinFeesPaymentType] = useState(null);
   const [customJoinFeesAmount, setCustomJoinFeesAmount] = useState(0);
   const [memberJoinFees, setMemberJoinFees] = useState(0);
+  const [joinInOffer, setJoinInOffer] = useState(null);
 
   // Modal states
   const [acceptModalVisible, setAcceptModalVisible] = useState(false);
@@ -72,32 +74,32 @@ const RequestSection = () => {
       // Fetch requests from each program concurrently
       const fetchPromises = programsToCheck.map(async (program) => {
         try {
-          const programRequests = await getData(
-            `users/${user.uid}/programs/${program.id}/members`,
-            [
-              {
-                field: 'active_flag',
-                operator: '==',
-                value: false
-              },
-              {
-                field: 'status',
-                operator: '==',
-                value: 'pending'
-              }
-            ],
-            {
-              field: 'requestCreatedAt',
-              direction: 'desc'
-            }
-          );
+          const [pendingReqs, rejectedReqs] = await Promise.all([
+            getData(
+              `users/${user.uid}/programs/${program.id}/members`,
+              [
+                { field: 'active_flag', operator: '==', value: false },
+                { field: 'status', operator: '==', value: 'pending' }
+              ],
+              { field: 'requestCreatedAt', direction: 'desc' }
+            ),
+            getData(
+              `users/${user.uid}/programs/${program.id}/members`,
+              [
+                { field: 'active_flag', operator: '==', value: false },
+                { field: 'status', operator: '==', value: 'rejected' }
+              ],
+              { field: 'rejectedAt', direction: 'desc' }
+            ),
+          ]);
 
-          // Add program info to each request
-          return programRequests.map(request => ({
+          const mapReqs = (reqs) => reqs.map(request => ({
             ...request,
             programId: program.id,
             programName: program.name || program.programName || 'Unknown Program'
           }));
+
+          return [...mapReqs(pendingReqs), ...mapReqs(rejectedReqs)];
         } catch (error) {
           console.error(`Error fetching requests for program ${program.id}:`, error);
           return [];
@@ -121,26 +123,28 @@ const RequestSection = () => {
     }
   };
 
-  // Filter requests based on search term
+  // Filter requests based on status tab + search term
   const filteredRequests = useMemo(() => {
-    if (!searchTerm) return requests;
-    
+    let filtered = requests.filter(req => req.status === requestFilter);
+    if (!searchTerm) return filtered;
     const term = searchTerm.toLowerCase();
-    return requests.filter(request => 
+    return filtered.filter(request => 
       (request.displayName && request.displayName.toLowerCase().includes(term)) ||
       (request.aadhaarNo && request.aadhaarNo.includes(term)) ||
       (request.fatherName && request.fatherName.toLowerCase().includes(term)) ||
       (request.phone && request.phone.includes(term)) ||
-      (request.programName && request.programName.toLowerCase().includes(term)) || (request.addedByName && request.addedByName.toLowerCase().includes(term))
+      (request.programName && request.programName.toLowerCase().includes(term)) ||
+      (request.addedByName && request.addedByName.toLowerCase().includes(term))
     );
-  }, [requests, searchTerm]);
+  }, [requests, searchTerm, requestFilter]);
 
   // Calculate counts
-  const { pendingCount, totalCount } = useMemo(() => {
+  const { pendingCount, rejectedCount } = useMemo(() => {
     const pending = requests.filter(req => req.status === 'pending').length;
+    const rejected = requests.filter(req => req.status === 'rejected').length;
     return {
       pendingCount: pending,
-      totalCount: requests.length
+      rejectedCount: rejected,
     };
   }, [requests]);
 
@@ -157,9 +161,11 @@ const showAcceptModal = (member) => {
   acceptForm.setFieldsValue({
     joinFeesDone: false,
     joinFeesPaymentType: undefined,
-    customJoinFeesAmount: 1100,  // Add this line
+    customJoinFeesAmount: 1100,
     joinFeesTxtId: undefined,
     applicationNumber: member.applicationNumber || "",
+    joinInOffer: member.joinInOffer || undefined,
+    joinInOfferCustomAmount: member.joinInOfferCustomAmount || undefined,
   });
 };
 
@@ -210,6 +216,8 @@ const showAcceptModal = (member) => {
         closingMonths: values.closingMonths || 0,
         joinFeesTxtId: values.joinFeesTxtId || "",
         joinFeesPaymentType: values.joinFeesPaymentType || "",
+        joinInOffer: values.joinInOffer || "",
+        joinInOfferCustomAmount: values.joinInOffer === 'custom' ? (values.joinInOfferCustomAmount || 0) : 0,
         joinFeesPaidAmount: joinFeesPaidAmount,
         joinFeesRemainingAmount: joinFeesRemainingAmount,
         dateJoin:currentMember.dateJoin || dayjs().format('DD-MM-YYYY'),
@@ -392,7 +400,9 @@ ${values.joinFeesDone ? `Join Fees: ₹${joinFeesPaidAmount}` : 'Join Fees: Pend
   const renderMemberCard = (member) => (
     <Card
       key={`${member.programId}-${member.id}`}
-      className="mb-4 shadow-sm border-l-4 border-l-blue-500 hover:shadow-md transition-shadow"
+      className={`mb-4 shadow-sm border-l-4 hover:shadow-md transition-shadow ${
+        member.status === 'rejected' ? 'border-l-red-400' : 'border-l-blue-500'
+      }`}
       actions={[
         <Tooltip title="Accept Request">
           <Button 
@@ -538,11 +548,13 @@ ${values.joinFeesDone ? `Join Fees: ₹${joinFeesPaidAmount}` : 'Join Fees: Pend
       description={
         <div className="text-center">
           <Typography.Text type="secondary" className="text-lg">
-            No pending requests
+            {requestFilter === 'pending' ? 'No pending requests' : 'No rejected requests'}
           </Typography.Text>
           <br />
           <Typography.Text type="secondary">
-            All member requests have been processed
+            {requestFilter === 'pending'
+              ? 'All member requests have been processed'
+              : 'No members have been rejected'}
           </Typography.Text>
         </div>
       }
@@ -643,11 +655,11 @@ ${values.joinFeesDone ? `Join Fees: ₹${joinFeesPaidAmount}` : 'Join Fees: Pend
           
           <div className="flex justify-between items-center text-sm">
             <div className="flex gap-4">
-              <span className="text-gray-600">
-                Total: <strong>{totalCount}</strong>
-              </span>
               <span className="text-blue-600">
                 Pending: <strong>{pendingCount}</strong>
+              </span>
+              <span className="text-red-600">
+                Rejected: <strong>{rejectedCount}</strong>
               </span>
               {searchTerm && (
                 <span className="text-green-600">
@@ -667,7 +679,24 @@ ${values.joinFeesDone ? `Join Fees: ₹${joinFeesPaidAmount}` : 'Join Fees: Pend
           </div>
         </div>
 
-        <Divider className="my-4" />
+        {/* Pending / Rejected tabs */}
+        <div className="flex gap-2 mb-4">
+          <Button
+            type={requestFilter === 'pending' ? 'primary' : 'default'}
+            size="small"
+            onClick={() => setRequestFilter('pending')}
+          >
+            Pending ({pendingCount})
+          </Button>
+          <Button
+            type={requestFilter === 'rejected' ? 'primary' : 'default'}
+            size="small"
+            danger={requestFilter === 'rejected'}
+            onClick={() => setRequestFilter('rejected')}
+          >
+            Rejected ({rejectedCount})
+          </Button>
+        </div>
 
         {/* Requests List */}
         <div className="space-y-4 flex-1 overflow-auto">
@@ -690,23 +719,25 @@ ${values.joinFeesDone ? `Join Fees: ₹${joinFeesPaidAmount}` : 'Join Fees: Pend
             setAcceptModalVisible(false);
             setJoinFeesPaymentType(null);
             setCustomJoinFeesAmount(0);
+            setJoinInOffer(null);
             acceptForm.resetFields();
           }}
           width={600}
           footer={[
             <Button key="cancel" onClick={() => {
               setAcceptModalVisible(false);
-              setJoinFeesPaymentType(null);
-              setCustomJoinFeesAmount(0);
-              acceptForm.resetFields();
-            }}>
-              Cancel
-            </Button>,
-            <Button 
-              key="accept" 
-              type="primary" 
-              loading={acceptLoading}
-              onClick={handleAccept}
+    setJoinFeesPaymentType(null);
+    setCustomJoinFeesAmount(0);
+    setJoinInOffer(null);
+    acceptForm.resetFields();
+  }}>
+    Cancel
+  </Button>,
+  <Button 
+    key="accept" 
+    type="primary" 
+    loading={acceptLoading}
+    onClick={handleAccept}
               icon={<FiCheck />}
               style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
             >
@@ -718,24 +749,52 @@ ${values.joinFeesDone ? `Join Fees: ₹${joinFeesPaidAmount}` : 'Join Fees: Pend
             <Form.Item name="applicationNumber" label="Application Number">
               <Input placeholder="Enter or leave blank to skip" />
             </Form.Item>
-            <Form.Item
-              name="joinFeesDone"
-              valuePropName="checked"
-            >
-              <Checkbox onChange={(e) => {
-                if (!e.target.checked) {
-                  setJoinFeesPaymentType(null);
-                  setCustomJoinFeesAmount(0);
-                  acceptForm.setFieldsValue({
-                    joinFeesPaymentType: undefined,
-                   customJoinFeesAmount: 1100,   // Add this line
-                    joinFeesTxtId: undefined
-                  });
-                }
-              }}>
-                <strong>Join Fees Paid</strong>
-              </Checkbox>
-            </Form.Item>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="joinInOffer" label="Join In Offer (Initial Commitment)">
+                  <Select placeholder="Select offer" onChange={setJoinInOffer}>
+                    <Option value="full">Full (₹{memberJoinFees})</Option>
+                    <Option value="half">Half / 50% (₹{Math.round(memberJoinFees / 2)})</Option>
+                    <Option value="custom">Custom Amount</Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="joinFeesDone" valuePropName="checked">
+                  <Checkbox onChange={(e) => {
+                    if (!e.target.checked) {
+                      setJoinFeesPaymentType(null);
+                      setCustomJoinFeesAmount(0);
+                      acceptForm.setFieldsValue({
+                        joinFeesPaymentType: undefined,
+                       customJoinFeesAmount: 1100,
+                        joinFeesTxtId: undefined
+                      });
+                    }
+                  }}>
+                    <strong>Join Fees Paid</strong>
+                  </Checkbox>
+                </Form.Item>
+              </Col>
+            </Row>
+
+            {joinInOffer === 'custom' && (
+              <Row gutter={16} className="mt-2">
+                <Col span={12}>
+                  <Form.Item
+                    name="joinInOfferCustomAmount"
+                    label="Join In Offer Custom Amount (₹)"
+                    rules={[{ required: true, message: 'कृपया राशि दर्ज करें' }]}
+                  >
+                    <InputNumber
+                      placeholder="Enter amount"
+                      className="w-full"
+                      min={1}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+            )}
             
             <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => 
               prevValues.joinFeesDone !== currentValues.joinFeesDone
@@ -754,32 +813,32 @@ ${values.joinFeesDone ? `Join Fees: ₹${joinFeesPaidAmount}` : 'Join Fees: Pend
                       </Text>
                     </div>
 
-                    <Form.Item
-                      name="joinFeesPaymentType"
-                      label="भुगतान प्रकार"
-                      rules={[{ required: true, message: 'कृपया भुगतान प्रकार चुनें' }]}
-                    >
-                     <Select 
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item
+                          name="joinFeesPaymentType"
+                          label="भुगतान प्रकार"
+                          rules={[{ required: true, message: 'कृपया भुगतान प्रकार चुनें' }]}
+                        >
+                         <Select 
   placeholder="भुगतान प्रकार चुनें"
   onChange={(value) => {
     setJoinFeesPaymentType(value);
     if (value === 'full') {
       setCustomJoinFeesAmount(memberJoinFees);
-      acceptForm.setFieldsValue({
-        customJoinFeesAmount: memberJoinFees
-      });
+      acceptForm.setFieldsValue({ customJoinFeesAmount: memberJoinFees });
     } else if (value === 'custom') {
-      setCustomJoinFeesAmount(1100);  // Change from 0 to 1100
-      acceptForm.setFieldsValue({
-        customJoinFeesAmount: 1100   // Change from undefined to 1100
-      });
+      setCustomJoinFeesAmount(1100);
+      acceptForm.setFieldsValue({ customJoinFeesAmount: 1100 });
     }
   }}
 >
   <Option value="full">Full Paid (₹{memberJoinFees})</Option>
   <Option value="custom">Custom Paid</Option>
 </Select>
-                    </Form.Item>
+                        </Form.Item>
+                      </Col>
+                    </Row>
 
                {/* Custom payment input with default value 1100 */}
 <Form.Item
@@ -896,30 +955,22 @@ ${values.joinFeesDone ? `Join Fees: ₹${joinFeesPaidAmount}` : 'Join Fees: Pend
         <Modal
           title="Reject Member Request"
           open={rejectModalVisible}
-          onCancel={() => setRejectModalVisible(false)}
-      footer={[
-  <Button key="cancel" onClick={() => {
-    setAcceptModalVisible(false);
-    setJoinFeesPaymentType(null);
-    setCustomJoinFeesAmount(1100);  // Change from 0 to 1100
-    acceptForm.resetFields();
-    acceptForm.setFieldsValue({
-      customJoinFeesAmount: 1100    // Add this to reset to 1100
-    });
-  }}>
-    Cancel
-  </Button>,
-  <Button 
-    key="accept" 
-    type="primary" 
-    loading={acceptLoading}
-    onClick={handleAccept}
-    icon={<FiCheck />}
-    style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
-  >
-    Accept Member
-  </Button>
-]}
+          onCancel={() => { setRejectModalVisible(false); rejectForm.resetFields(); }}
+          footer={[
+            <Button key="cancel" onClick={() => { setRejectModalVisible(false); rejectForm.resetFields(); }}>
+              Cancel
+            </Button>,
+            <Button
+              key="reject"
+              type="primary"
+              danger
+              loading={rejectLoading}
+              onClick={handleReject}
+              icon={<FiX />}
+            >
+              Reject Member
+            </Button>
+          ]}
         >
           <Form form={rejectForm} layout="vertical">
             <Form.Item

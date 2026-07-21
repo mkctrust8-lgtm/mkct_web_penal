@@ -363,11 +363,12 @@ const MemberList = () => {
             )
         },
         {
-            field: 'joinInOffer', headerName: 'Join Offer', width: 100,
+            field: 'joinInOffer', headerName: 'Join Offer', width: 130,
             cellRenderer: ({ data }) => {
                 const v = data.joinInOffer;
                 if (!v) return '—';
-                const map = { full: 'Full', half: 'Half', custom: 'Custom' };
+                if (v === 'custom') return <Tag>Custom (₹{data.joinInOfferCustomAmount || 0})</Tag>;
+                const map = { full: 'Full', half: 'Half' };
                 return <Tag>{map[v] || v}</Tag>;
             }
         },

@@ -325,7 +325,7 @@ function MemberDetailsView({isModalVisible, handleCloseModal, showDeleteConfirm,
                   <Tag color="geekblue">
                     {selectedMember.joinInOffer === 'full' ? 'Full (100%)' :
                      selectedMember.joinInOffer === 'half' ? 'Half (50%)' :
-                     selectedMember.joinInOffer === 'custom' ? 'Custom' :
+                     selectedMember.joinInOffer === 'custom' ? `Custom (₹${selectedMember.joinInOfferCustomAmount || 0})` :
                      selectedMember.joinInOffer || '-'}
                   </Tag>
                 </Descriptions.Item>

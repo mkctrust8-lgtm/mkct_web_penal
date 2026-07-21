@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Button, Drawer, Select, Form, Input, DatePicker, Upload, Card, Row, Col, Divider, Space, Typography, App, Spin, Checkbox } from 'antd';
+import { Button, Drawer, Select, Form, Input, InputNumber, DatePicker, Upload, Card, Row, Col, Divider, Space, Typography, App, Spin, Checkbox } from 'antd';
 import {
   EditOutlined,
   UserOutlined,
@@ -243,6 +243,7 @@ useEffect(() => {
       joinFeesTxtId: memberData?.joinFeesTxtId || "",
       applicationNumber: memberData.applicationNumber || "",
       joinInOffer: memberData.joinInOffer || undefined,
+      joinInOfferCustomAmount: memberData.joinInOfferCustomAmount || undefined,
     };
 
     // Add custom join fees amount if applicable
@@ -490,6 +491,7 @@ console.log(values,'values')
         joinFeesTxtId: values.joinFeesTxtId || "",
         joinFeesPaymentType: values.joinFeesPaymentType || "",
         joinInOffer: values.joinInOffer || "",
+        joinInOfferCustomAmount: values.joinInOffer === 'custom' ? (values.joinInOfferCustomAmount || 0) : 0,
         joinFeesPaidAmount: joinFeesPaidAmount,
         joinFeesRemainingAmount: joinFeesRemainingAmount,
         addedBy: values.addedBy,
@@ -879,6 +881,24 @@ console.log(values,'values')
                   </Form.Item>
                 </Col>
               </Row>
+
+              {joinInOffer === 'custom' && (
+                <Row gutter={16} className="mt-2">
+                  <Col span={12}>
+                    <Form.Item
+                      name="joinInOfferCustomAmount"
+                      label="Join In Offer Custom Amount (₹)"
+                      rules={[{ required: true, message: 'कृपया राशि दर्ज करें' }]}
+                    >
+                      <InputNumber
+                        placeholder="Enter amount"
+                        className="w-full"
+                        min={1}
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
+              )}
 
               {isJoinFeesDone && (
                 <>
