@@ -302,23 +302,26 @@ const styles = StyleSheet.create({
   
   // Column Widths
   colSerial: {
-    width: '7%',
+    width: '6%',
     textAlign: 'center',
   },
   colName: {
-    width: '28%',
+    width: '25%',
   },
   colFatherName: {
-    width: '22%',
-  },
-  colJati: {
-    width: '15%',
-  },
-  colPhone: {
     width: '18%',
   },
+  colJati: {
+    width: '10%',
+  },
+  colPhone: {
+    width: '13%',
+  },
+  colJoinOffer: {
+    width: '12%',
+  },
   colVillage: {
-    width: '20%',
+    width: '16%',
   },
   
   footer: {
@@ -533,6 +536,9 @@ const MemberListPdf = ({
           <View style={[styles.tableHeaderCell, styles.colPhone]}>
             <Text>फोन नंबर</Text>
           </View>
+          <View style={[styles.tableHeaderCell, styles.colJoinOffer]}>
+            <Text>जॉइन ऑफर</Text>
+          </View>
           <View style={[styles.tableHeaderCell, styles.colVillage, { borderRightWidth: 0 }]}>
             <Text>गाँव/शहर</Text>
           </View>
@@ -580,6 +586,16 @@ const MemberListPdf = ({
             {/* Phone Number */}
             <View style={[styles.tableCell, styles.colPhone]}>
               <Text>{member.phone || 'N/A'}</Text>
+            </View>
+            
+            {/* Join Offer */}
+            <View style={[styles.tableCell, styles.colJoinOffer]}>
+              <Text style={{ fontSize: 7 }}>
+                {member.joinInOffer === 'full' ? 'Full' :
+                 member.joinInOffer === 'half' ? 'Half' :
+                 member.joinInOffer === 'custom' ? `Custom (₹${member.joinInOfferCustomAmount || 0})` :
+                 member.joinInOffer || '—'}
+              </Text>
             </View>
             
             {/* Village/City */}

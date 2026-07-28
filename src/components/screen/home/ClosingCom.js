@@ -25,6 +25,8 @@ import {
   collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, getDoc, addDoc
 } from 'firebase/firestore';
 import ClosingBannerImageDrawer from './ClosingMember/ClosingBannerImageDrawer';
+import GenerateRasidEntry from './ClosingMember/GenerateRasidEntry';
+
 import EditPdfDataForm from './ClosingMember/EditPdfDataForm';
 import { getAuth } from 'firebase/auth';
 import {
@@ -95,6 +97,9 @@ const ClosingCom = ({ user, selectedProgram }) => {
   const { message, modal } = App.useApp();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isOpenBanner, setIsOpenBanner] = useState(false);
+
+  const [isOpenRasidEntry, setIsOpenRasidEntry] = useState(false);
+
   const [isEditPdfDataOpen, setIsEditPdfDataOpen] = useState(false);
   const [closingGroups, setClosingGroups] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
@@ -696,6 +701,9 @@ const ClosingCom = ({ user, selectedProgram }) => {
             </div>
           </div>
           <div className="header-actions">
+                           <button className="hdr-btn" onClick={() => setIsOpenRasidEntry(true)}>
+              <FiPlus size={13} /> Create Payment Entry
+            </button>
             <button className="hdr-btn" onClick={() => setIsOpenDrawer(true)}>
               <FiUsers size={13} /> Pay Status
             </button>
@@ -1027,6 +1035,15 @@ const ClosingCom = ({ user, selectedProgram }) => {
           memberData={selectedRecord}
           selectedProgram={selectedProgram}
         />
+
+          {
+          isOpenRasidEntry && (
+            <GenerateRasidEntry
+              open={isOpenRasidEntry}
+              setOpen={setIsOpenRasidEntry}
+              selectedProgram={selectedProgram}
+              user={user} closingMemberList={allMembersData} />)
+        }
 
         <ClosingBannerImageDrawer
           open={isOpenBanner}

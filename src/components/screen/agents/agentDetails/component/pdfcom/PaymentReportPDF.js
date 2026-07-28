@@ -22,7 +22,7 @@ Font.register({
   ]
 });
 
-const ROWS_PER_PAGE = 15;
+const ROWS_PER_PAGE = 12;
 
 const styles = StyleSheet.create({
   page: {
@@ -143,21 +143,21 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   memberPhotoBox: {
-    width: 70,
+    width: 55,
     backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
     borderRight: '1px solid #d4af37',
-    padding: 5,
+    padding: 3,
   },
   memberPhotoImg: {
-    width: 60,
-    height: 65,
+    width: 48,
+    height: 52,
     borderRadius: 3,
   },
   memberPhotoPlaceholder: {
-    width: 60,
-    height: 65,
+    width: 48,
+    height: 52,
     backgroundColor: '#e8e8e8',
     borderRadius: 3,
     justifyContent: 'center',
@@ -203,20 +203,20 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   memberInfoGridItem: {
-    width: '50%',
+    width: '33%',
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 3,
+    marginBottom: 2,
   },
   memberInfoLabel: {
-    fontSize: 11,
+    fontSize: 9,
     fontWeight: 'bold',
     color: '#555',
-    marginRight: 3,
-    minWidth: 40,
+    marginRight: 2,
+    minWidth: 30,
   },
   memberInfoValue: {
-    fontSize: 11,
+    fontSize: 9,
     color: '#1a0f5e',
     fontWeight: 'bold',
   },
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   },
   tableRow: {
     flexDirection: 'row',
-    minHeight: 22,
+    minHeight: 26,
     borderBottomWidth: 0.5,
     borderBottomColor: '#e0e0e0',
   },
@@ -278,9 +278,9 @@ const styles = StyleSheet.create({
   tableRowEmpty: { backgroundColor: '#fdfdfd' },
 
   tableCell: {
-    paddingVertical: 5,
+    paddingVertical: 6,
     paddingHorizontal: 4,
-    fontSize: 9,
+    fontSize: 10,
     borderRightWidth: 0.5,
     borderRightColor: '#d9d9d9',
     justifyContent: 'center',
@@ -288,9 +288,9 @@ const styles = StyleSheet.create({
   },
   // Header cells — larger font, more padding, clear labels
   tableHeaderCell: {
-    paddingVertical: 6,
+    paddingVertical: 7,
     paddingHorizontal: 4,
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 'bold',
     color: '#fff',
     borderRightWidth: 0.5,
@@ -302,32 +302,32 @@ const styles = StyleSheet.create({
   // Column widths
   colSerial:       { width: '5%',  alignItems: 'center' },
   colMarriageName: { width: '20%', alignItems: 'flex-start' },
-  colFatherName:   { width: '18%', alignItems: 'flex-start' },
+  colFatherName:   { width: '15%', alignItems: 'flex-start' },
   colRegNo:        { width: '10%', alignItems: 'center' },
-  colDate:         { width: '10%', alignItems: 'center' },
+  colDate:         { width: '14%', alignItems: 'center' },
   colPhone:        { width: '12%', alignItems: 'center' },
-  colVillage:      { width: '15%', alignItems: 'center' },
+  colVillage:      { width: '13%', alignItems: 'center' },
   colAmount:       { width: '8%', alignItems: 'flex-end' },
 
   textLeft:   { textAlign: 'left' },
   textCenter: { textAlign: 'center' },
   textRight:  { textAlign: 'right' },
 
-  // Data text — slightly bigger than before
-  dataText:       { fontSize: 9, lineHeight: 1.2 },
-  dataBoldText:   { fontSize: 9, fontWeight: 'bold', lineHeight: 1.2 },
-  emptyTableText: { fontSize: 8, color: '#e8e8e8' },
+  // Data text — increased size
+  dataText:       { fontSize: 10, lineHeight: 1.3 },
+  dataBoldText:   { fontSize: 10, fontWeight: 'bold', lineHeight: 1.3 },
+  emptyTableText: { fontSize: 9, color: '#e8e8e8' },
 
   // Total Row
   totalRow: {
     flexDirection: 'row',
     backgroundColor: pdfColors.schemeColor,
-    minHeight: 24,
+    minHeight: 26,
     alignItems: 'center',
   },
   totalCell: {
-    padding: 5,
-    fontSize: 9,
+    padding: 6,
+    fontSize: 10,
     fontWeight: 'bold',
     color: '#fff',
     borderRightWidth: 0.5,
@@ -486,6 +486,24 @@ const PaymentStatusPDF = ({
     return stats.pendingCount > 0;
   });
 
+  /* sort pending marriages by closing date (oldest first) */
+  const parseDate = (str) => {
+    if (!str) return new Date(0);
+    const parts = str.split('-');
+    if (parts.length === 3) {
+      const [d, m, y] = parts.map(Number);
+      if (d && m && y) return new Date(y, m - 1, d);
+    }
+    return new Date(0);
+  };
+  membersWithPending.forEach(member => {
+    member.marriages.sort((a, b) => {
+      const dateA = parseDate(a.marriageDate || a.closing_date || '');
+      const dateB = parseDate(b.marriageDate || b.closing_date || '');
+      return dateA - dateB;
+    });
+  });
+
   const calculateOverallTotals = () => {
     let totalPendingMarriages = 0, totalPendingAmount = 0, totalAllMarriages = 0, totalAllAmount = 0;
     membersWithPending.forEach(member => {
@@ -580,6 +598,18 @@ const PaymentStatusPDF = ({
           <View style={styles.memberInfoGridItem}>
             <Text style={styles.memberInfoLabel}>गाँव:</Text>
             <Text style={styles.memberInfoValue}>{member.village || 'N/A'}</Text>
+          </View>
+          <View style={styles.memberInfoGridItem}>
+            <Text style={styles.memberInfoLabel}>जाति:</Text>
+            <Text style={styles.memberInfoValue}>{member.jati || 'N/A'}</Text>
+          </View>
+          <View style={styles.memberInfoGridItem}>
+            <Text style={styles.memberInfoLabel}>वारसदार:</Text>
+            <Text style={styles.memberInfoValue}>{member.guardian || 'N/A'}</Text>
+          </View>
+          <View style={styles.memberInfoGridItem}>
+            <Text style={styles.memberInfoLabel}>संबंध:</Text>
+            <Text style={styles.memberInfoValue}>{member.guardianRelation || 'N/A'}</Text>
           </View>
         </View>
         <View style={styles.memberStatsRow}>
@@ -692,13 +722,13 @@ const PaymentStatusPDF = ({
         {/* ── Total Row ── */}
         {showTotal && memberStats && (
           <View style={styles.totalRow}>
-            <View style={[styles.totalCell, { width: '88%', paddingLeft: 10 }]}>
-              <Text style={{ fontSize: 9, color: '#fff', fontWeight: 'bold' }}>
+            <View style={[styles.totalCell, { width: '87%', paddingLeft: 10 }]}>
+              <Text style={{ fontSize: 10, color: '#fff', fontWeight: 'bold' }}>
                 कुल बकाया ({memberStats.pendingCount} समापन) — इस पृष्ठ पर {marriages.length} रिकॉर्ड
               </Text>
             </View>
             <View style={[styles.totalCell, {
-              width: '12%',
+              width: '13%',
               borderRightWidth: 0,
               backgroundColor: '#8B0000',
               alignItems: 'flex-end',
