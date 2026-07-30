@@ -625,7 +625,7 @@ const PaymentStatusPDF = ({
             <Text style={styles.memberStatValue}>{formatCurrency(stats.pendingAmount)}</Text>
           </View>
           <View style={styles.memberStatItem}>
-            <Text style={styles.memberStatLabel}>राशि/व्यक्ति</Text>
+            <Text style={styles.memberStatLabel}> किस्त राशि</Text>
             <Text style={styles.memberStatValue}>{formatCurrency(member.payAmount)}</Text>
           </View>
         </View>
