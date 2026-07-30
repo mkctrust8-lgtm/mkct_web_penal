@@ -22,7 +22,7 @@ Font.register({
   ]
 });
 
-const ROWS_PER_PAGE = 12;
+const ROWS_PER_PAGE = 15;
 
 const styles = StyleSheet.create({
   page: {
@@ -137,9 +137,9 @@ const styles = StyleSheet.create({
   memberCard: {
     flexDirection: 'row',
     backgroundColor: '#fff8f8',
-    marginBottom: 7,
+    marginBottom: 4,
     borderRadius: 4,
-    border: '1.5px solid #d4af37',
+    border: '1px solid #d4af37',
     overflow: 'hidden',
   },
   memberPhotoBox: {
@@ -171,18 +171,18 @@ const styles = StyleSheet.create({
   },
   memberDetails: {
     flex: 1,
-    padding: 7,
+    padding: 5,
   },
   memberNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 5,
-    paddingBottom: 4,
+    marginBottom: 3,
+    paddingBottom: 2,
     borderBottom: '1px solid #f0d9a0',
   },
   memberName: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: 'bold',
     color: '#8B0000',
   },
@@ -224,31 +224,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: pdfColors.schemeColor,
     borderRadius: 3,
-    padding: 5,
+    padding: 3,
     justifyContent: 'space-around',
   },
   memberStatItem: {
     alignItems: 'center',
   },
   memberStatLabel: {
-    fontSize: 7.5,
+    fontSize: 7,
     color: '#ffccc7',
     marginBottom: 1,
   },
   memberStatValue: {
-    fontSize: 11,
+    fontSize: 9,
     color: '#fff',
     fontWeight: 'bold',
   },
 
   // ─── Table Section Title ───
   tableSectionTitle: {
-    fontSize: 10,
+    fontSize: 9,
     color: pdfColors.headingColor,
     fontWeight: 'bold',
-    marginBottom: 4,
-    paddingBottom: 3,
-    borderBottom: `1.5px solid ${pdfColors.borderColor}`,
+    marginBottom: 2,
+    paddingBottom: 2,
+    borderBottom: `1px solid ${pdfColors.borderColor}`,
     textAlign: 'center',
   },
 
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   },
   tableRow: {
     flexDirection: 'row',
-    minHeight: 26,
+    minHeight: 20,
     borderBottomWidth: 0.5,
     borderBottomColor: '#e0e0e0',
   },
@@ -278,8 +278,8 @@ const styles = StyleSheet.create({
   tableRowEmpty: { backgroundColor: '#fdfdfd' },
 
   tableCell: {
-    paddingVertical: 6,
-    paddingHorizontal: 4,
+    paddingVertical: 3,
+    paddingHorizontal: 3,
     fontSize: 10,
     borderRightWidth: 0.5,
     borderRightColor: '#d9d9d9',
@@ -288,8 +288,8 @@ const styles = StyleSheet.create({
   },
   // Header cells — larger font, more padding, clear labels
   tableHeaderCell: {
-    paddingVertical: 7,
-    paddingHorizontal: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 3,
     fontSize: 10,
     fontWeight: 'bold',
     color: '#fff',
@@ -302,12 +302,11 @@ const styles = StyleSheet.create({
   // Column widths
   colSerial:       { width: '5%',  alignItems: 'center' },
   colMarriageName: { width: '20%', alignItems: 'flex-start' },
-  colFatherName:   { width: '15%', alignItems: 'flex-start' },
+  colFatherName:   { width: '23%', alignItems: 'flex-start' },
   colRegNo:        { width: '10%', alignItems: 'center' },
   colDate:         { width: '14%', alignItems: 'center' },
   colPhone:        { width: '12%', alignItems: 'center' },
-  colVillage:      { width: '13%', alignItems: 'center' },
-  colAmount:       { width: '8%', alignItems: 'flex-end' },
+  colVillage:      { width: '16%', alignItems: 'center' },
 
   textLeft:   { textAlign: 'left' },
   textCenter: { textAlign: 'center' },
@@ -322,11 +321,11 @@ const styles = StyleSheet.create({
   totalRow: {
     flexDirection: 'row',
     backgroundColor: pdfColors.schemeColor,
-    minHeight: 26,
+    minHeight: 20,
     alignItems: 'center',
   },
   totalCell: {
-    padding: 6,
+    padding: 4,
     fontSize: 10,
     fontWeight: 'bold',
     color: '#fff',
@@ -338,19 +337,19 @@ const styles = StyleSheet.create({
   // ─── Notice — fixed at bottom ───
   noticeSection: {
     marginTop: 'auto',
-    marginBottom: 10,         // leave room for footer
-    paddingVertical: 5,
-    paddingHorizontal: 10,
+    marginBottom: 6,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
     backgroundColor: '#fff8e1',
-    border: `1px solid ${pdfColors.borderColor}`,
-    borderRadius: 3,
+    border: `0.5px solid ${pdfColors.borderColor}`,
+    borderRadius: 2,
   },
   noticeText: {
-    fontSize: 11,
+    fontSize: 9,
     color: '#5d4037',
     fontWeight: 'bold',
     textAlign: 'center',
-    lineHeight: 1.4,
+    lineHeight: 1.3,
   },
 
   // ─── Footer ───
@@ -625,6 +624,10 @@ const PaymentStatusPDF = ({
             <Text style={styles.memberStatLabel}>बकाया राशि</Text>
             <Text style={styles.memberStatValue}>{formatCurrency(stats.pendingAmount)}</Text>
           </View>
+          <View style={styles.memberStatItem}>
+            <Text style={styles.memberStatLabel}>राशि/व्यक्ति</Text>
+            <Text style={styles.memberStatValue}>{formatCurrency(member.payAmount)}</Text>
+          </View>
         </View>
       </View>
     </View>
@@ -656,11 +659,8 @@ const PaymentStatusPDF = ({
           <View style={[styles.tableHeaderCell, styles.colPhone]}>
             <Text style={styles.textCenter}>फोन नं.</Text>
           </View>
-          <View style={[styles.tableHeaderCell, styles.colVillage]}>
+          <View style={[styles.tableHeaderCell, styles.colVillage, { borderRightWidth: 0 }]}>
             <Text style={styles.textCenter}>गाँव</Text>
-          </View>
-          <View style={[styles.tableHeaderCell, styles.colAmount, { borderRightWidth: 0 }]}>
-            <Text style={styles.textRight}>राशि (₹)</Text>
           </View>
         </View>
 
@@ -688,13 +688,8 @@ const PaymentStatusPDF = ({
             <View style={[styles.tableCell, styles.colPhone]}>
               <Text style={[styles.textCenter, styles.dataText]}>{marriage.closingPhone || '-'}</Text>
             </View>
-            <View style={[styles.tableCell, styles.colVillage]}>
+            <View style={[styles.tableCell, styles.colVillage, { borderRightWidth: 0 }]}>
               <Text style={[styles.textCenter, styles.dataText]}>{marriage.closingVillage || '-'}</Text>
-            </View>
-            <View style={[styles.tableCell, styles.colAmount, { borderRightWidth: 0 }]}>
-              <Text style={[styles.textRight, styles.dataBoldText, { color: '#cf1322' }]}>
-                {formatCurrency(marriage.amount)}
-              </Text>
             </View>
           </View>
         ))}
@@ -709,33 +704,19 @@ const PaymentStatusPDF = ({
               <Text style={[styles.textCenter, styles.emptyTableText]}>—</Text>
             </View>
             {['colMarriageName','colFatherName','colRegNo','colDate','colPhone','colVillage'].map((col, ci) => (
-              <View key={ci} style={[styles.tableCell, styles[col]]}>
+              <View key={ci} style={[styles.tableCell, styles[col], ci === 5 ? { borderRightWidth: 0 } : {}]}>
                 <Text style={styles.emptyTableText}> </Text>
               </View>
             ))}
-            <View style={[styles.tableCell, styles.colAmount, { borderRightWidth: 0 }]}>
-              <Text style={styles.emptyTableText}> </Text>
-            </View>
           </View>
         ))}
 
         {/* ── Total Row ── */}
         {showTotal && memberStats && (
           <View style={styles.totalRow}>
-            <View style={[styles.totalCell, { width: '87%', paddingLeft: 10 }]}>
+            <View style={[styles.totalCell, { flex: 1, paddingLeft: 10, borderRightWidth: 0 }]}>
               <Text style={{ fontSize: 10, color: '#fff', fontWeight: 'bold' }}>
                 कुल बकाया ({memberStats.pendingCount} समापन) — इस पृष्ठ पर {marriages.length} रिकॉर्ड
-              </Text>
-            </View>
-            <View style={[styles.totalCell, {
-              width: '13%',
-              borderRightWidth: 0,
-              backgroundColor: '#8B0000',
-              alignItems: 'flex-end',
-              paddingRight: 8,
-            }]}>
-              <Text style={{ fontSize: 10, color: '#fff', fontWeight: 'bold' }}>
-                {formatCurrency(memberStats.pendingAmount)}
               </Text>
             </View>
           </View>
