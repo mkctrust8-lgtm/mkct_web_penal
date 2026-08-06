@@ -188,7 +188,7 @@ const AddPaymentModal = () => {
                     paidAmount: transaction.amount,
                     paymentMethod: paymentMethod,
                     ...(paymentMethod === 'online' && {
-                        onlineReference: form.getFieldValue('onlineReference')
+                        onlineReference: form.getFieldValue('onlineReference')?.trim() || ''
                     })
                 };
                 
@@ -219,11 +219,8 @@ const AddPaymentModal = () => {
             return;
         }
 
-        if (values.paymentMethod === 'online') {
-            if (!values.onlineReference?.trim()) {
-                message.error("Please enter transaction reference/UTR number");
-                return;
-            }
+        if (values.paymentMethod === 'online' && values.onlineReference?.trim()) {
+            // Only check duplicate reference when a reference number is provided (optional field)
 
             const isDuplicate = await checkDuplicateReference(values.onlineReference, selectedProgram.id);
             
@@ -317,7 +314,7 @@ const AddPaymentModal = () => {
                     marriageStatus: marriage?.status || '',
                     paymentPendingId: `${marriageId}_${selectedMember}`,
                     ...(values.paymentMethod === 'online' && {
-                        onlineReference: values.onlineReference,
+                        onlineReference: values.onlineReference?.trim() || '',
                         onlineVerified: false
                     }),
                     createdBy: user.uid,
@@ -1084,7 +1081,7 @@ const AddPaymentModal = () => {
                     name="onlineReference"
                     label={<span className="text-xs font-medium">Transaction Reference</span>}
                     rules={[
-                        { required: true, message: 'Enter reference' },
+                        { required: false, message: 'Enter reference' },
                         { min: 3, message: 'Min 3 characters' }
                     ]}
                     validateStatus={!isReferenceValid ? 'error' : checkingReference ? 'validating' : ''}
@@ -1206,7 +1203,7 @@ const AddPaymentModal = () => {
                                     disabled={
                                         !selectedMarriages.length || 
                                         !form.getFieldValue('amount') ||
-                                        (paymentMethod === 'online' && !isReferenceValid) ||
+                                        (paymentMethod === 'online' && !!form.getFieldValue('onlineReference')?.trim() && !isReferenceValid) ||
                                         checkingReference
                                     }
                                     icon={<CheckCircleOutlined />}
