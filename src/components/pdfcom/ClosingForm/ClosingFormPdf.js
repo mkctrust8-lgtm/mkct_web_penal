@@ -726,7 +726,7 @@ const ClosingFormPdf = ({data, selectedProgram,payStatus,paymentData}) => {
                             <View style={styles.signatureBox}>
                                 <View style={styles.signatureLine} />
                                 <Text style={styles.signatureLabel}>संस्थापक हस्ताक्षर</Text>
-                                <Text style={{ fontSize: 8, color: '#666' }}>{TrsutData.trustPresident}</Text>
+                                <Text style={{ fontSize: 8, color: '#666' }}>{TrsutData.name}</Text>
                             </View>
                         </View>
           </View>
