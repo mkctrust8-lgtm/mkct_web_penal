@@ -33,7 +33,9 @@ import {
   Form,
   Input,
   Modal,
-  App
+  App,
+  Segmented,
+  Tag
 } from 'antd';
 import dayjs from 'dayjs';
 import MemberDetailsView from '@/components/screen/programs/members/MemberDetailsView';
@@ -73,11 +75,15 @@ const AgentMembers = ({ agentId, agentInfo }) => {
   const [programMembersData, setProgramMembersData] = useState({});
   const [dateRange, setDateRange] = useState(null);
   const [searchText, setSearchText] = useState('');
+  // 'active' = chalu members, 'closed' = jinki closing (marriage) ho chuki hai, 'all' = sabhi
+  const [memberTypeFilter, setMemberTypeFilter] = useState('active');
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [filterForm] = Form.useForm();
     const { message } = App.useApp();
   const { user } = useAuth();
   const programList = useSelector((state) => state.data.programList);
+
+  const isClosedMember = (m) => m?.marriage_flag === true;
 
   const COL_DEFS = [
     { 
@@ -87,13 +93,14 @@ const AgentMembers = ({ agentId, agentInfo }) => {
       pinned: 'left', 
       cellRenderer: (props) => {
         return (
-          <div className={`flex items-center gap-2 relative ${props.data.isBlocked ? 'bg-red-300' : props.data.isPrinted ? 'bg-green-100' : 'bg-white'}`}>
+          <div className={`flex items-center gap-2 relative ${props.data.isBlocked ? 'bg-red-300' : isClosedMember(props.data) ? 'bg-orange-50' : props.data.isPrinted ? 'bg-green-100' : 'bg-white'}`}>
             <Avatar
               src={props.data.photoURL}
               alt={props.data.displayName}
               size={30}
             />
             <h1>{props.data.displayName}</h1>
+            {isClosedMember(props.data) && <Tag color="orange" className="!ml-1">Closed</Tag>}
           </div>
         );
       } 
@@ -104,6 +111,13 @@ const AgentMembers = ({ agentId, agentInfo }) => {
     { field: "phone", headerName: "Phone", width: 120, cellDataType: "text" },
     { field: "state", headerName: "State", width: 100, cellDataType: "text" },
     { field: "ageGroupRange", headerName: "Age Group", cellDataType: "text", width: 130 },
+    {
+      field: "closing_date",
+      headerName: "Closing Date",
+      width: 130,
+      hide: memberTypeFilter === 'active',
+      cellRenderer: (props) => isClosedMember(props.data) ? (props.data.closing_date || props.data.marriage_date || '—') : '—'
+    },
     { 
       field: "programName", 
       headerName: "Program", 
@@ -230,6 +244,13 @@ const AgentMembers = ({ agentId, agentInfo }) => {
   const applyFilters = () => {
     let filtered = allMembersData;
 
+    // Active / Closed member alag karo
+    if (memberTypeFilter === 'active') {
+      filtered = filtered.filter(member => !isClosedMember(member));
+    } else if (memberTypeFilter === 'closed') {
+      filtered = filtered.filter(member => isClosedMember(member));
+    }
+
     // Apply program filter
     if (selectedProgramFilter !== 'all') {
       filtered = filtered.filter(member => member.programId === selectedProgramFilter);
@@ -265,8 +286,8 @@ const AgentMembers = ({ agentId, agentInfo }) => {
     setSelectedProgramFilter('all');
     setDateRange(null);
     setSearchText('');
+    setMemberTypeFilter('active');
     filterForm.resetFields();
-    setFilteredMembers(allMembersData);
   };
 
   const calculateStatistics = (members) => {
@@ -307,7 +328,14 @@ const AgentMembers = ({ agentId, agentInfo }) => {
 
   useEffect(() => {
     applyFilters();
-  }, [selectedProgramFilter, dateRange, searchText, allMembersData]);
+  }, [selectedProgramFilter, dateRange, searchText, memberTypeFilter, allMembersData]);
+
+  // Program filter ke hisab se Active / Closed count
+  const programScopedMembers = selectedProgramFilter === 'all'
+    ? allMembersData
+    : allMembersData.filter(m => m.programId === selectedProgramFilter);
+  const activeCount = programScopedMembers.filter(m => !isClosedMember(m)).length;
+  const closedCount = programScopedMembers.filter(m => isClosedMember(m)).length;
 
   useEffect(() => {
     onGridReady();
@@ -363,6 +391,10 @@ const AgentMembers = ({ agentId, agentInfo }) => {
     }
   }
   
+  // Member type add करें
+  if (memberTypeFilter === 'closed') fileName += '_Closed_Members';
+  else if (memberTypeFilter === 'active') fileName += '_Active_Members';
+
   // Date range add करें
   if (dateRange && dateRange[0] && dateRange[1]) {
     const startDate = dateRange[0].format('DDMMYYYY');
@@ -522,11 +554,27 @@ const handleDelete = async () => {
           </Col>
           
           <Col span={24}>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-sm font-semibold text-gray-600">Member Type:</span>
+              <Segmented
+                size="large"
+                value={memberTypeFilter}
+                onChange={setMemberTypeFilter}
+                options={[
+                  { label: `Active Members (${activeCount})`, value: 'active' },
+                  { label: `Closed Members (${closedCount})`, value: 'closed' },
+                  { label: `All (${programScopedMembers.length})`, value: 'all' },
+                ]}
+              />
+            </div>
+          </Col>
+
+          <Col span={24}>
             <Row gutter={16}>
               <Col span={6}>
                 <Card size="small">
                   <Statistic
-                    title="Total Members"
+                    title={memberTypeFilter === 'closed' ? 'Closed Members' : memberTypeFilter === 'active' ? 'Active Members' : 'Total Members'}
                     value={stats.total}
                     valueStyle={{ color: '#3f8600' }}
                   />
@@ -585,6 +633,9 @@ const handleDelete = async () => {
       <div className="mt-4 flex justify-between">
         <div className="text-gray-600">
           Showing {filteredMembers.length} of {allMembersData.length} members
+          {memberTypeFilter !== 'all' && (
+            <span className="ml-2">| {memberTypeFilter === 'closed' ? 'Closed members' : 'Active members'} only</span>
+          )}
           {dateRange && (
             <span className="ml-2">
               | Date Range: {dateRange[0].format('DD/MM/YYYY')} - {dateRange[1].format('DD/MM/YYYY')}

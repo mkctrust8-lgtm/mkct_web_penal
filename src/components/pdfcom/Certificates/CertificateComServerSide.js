@@ -357,8 +357,8 @@ agentCode:{
 },
 OfferJoinfees:{
   position:'absolute',
-  bottom:0,
-  right:-150,
+  bottom:100,
+  right:100,
 }
 
 });

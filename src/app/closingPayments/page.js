@@ -477,10 +477,7 @@ function BulkPaymentDrawer({ open, onClose, selectedRows, programId, programName
   };
 
   const handleSubmit = async (values) => {
-    if (values.paymentMethod === 'online' && !values.onlineReference?.trim()) {
-      message.error('Enter transaction reference');
-      return;
-    }
+    // Bulk payment: Transaction / UTR reference optional hai
     if (memberDistribution.length === 0) {
       message.error('Koi bhi closing select nahi ki gayi');
       return;
@@ -502,7 +499,7 @@ function BulkPaymentDrawer({ open, onClose, selectedRows, programId, programName
         paymentMethod: values.paymentMethod,
         paymentDate: dayjs(values.paymentDate).toISOString(),
         note: values.note || '',
-        onlineReference: values.onlineReference || '',
+        onlineReference: values.onlineReference?.trim() || '',
       });
 
       message.success(
@@ -731,8 +728,8 @@ function BulkPaymentDrawer({ open, onClose, selectedRows, programId, programName
                 </Col>
               </Row>
               {paymentMethod === 'online' && (
-                <Form.Item name="onlineReference" label="Transaction / UTR Reference"
-                  rules={[{ required: true }, { min: 3 }]}
+                <Form.Item name="onlineReference" label="Transaction / UTR Reference (Optional)"
+                  rules={[{ required: false }, { min: 3, message: 'Kam se kam 3 characters' }]}
                   validateStatus={!refValid ? 'error' : checkingRef ? 'validating' : ''}
                   help={!refValid ? 'Reference already exists' : undefined} className="mb-3">
                   <Input size="large" placeholder="UTR/Transaction ID"

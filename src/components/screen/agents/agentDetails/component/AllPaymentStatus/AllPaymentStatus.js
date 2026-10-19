@@ -19,7 +19,7 @@ import {
 } from 'ag-grid-community';
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
 import AllPaymentPdf from './AllPaymentPdf';
-import { Button, Drawer, Select, Space, Tag } from 'antd';
+import { Button, Drawer, Segmented, Select, Space, Tag } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { getData } from '@/lib/services/firebaseService';
@@ -73,7 +73,15 @@ const CurrencyRenderer = ({ value }) =>
 const COL_DEFS = [
   { headerName: '#',              field: 'index',              width: 60,  pinned: 'left', cellStyle: { fontWeight: 700, color: '#6b7280' } },
   { headerName: 'Reg. No.',       field: 'registrationNumber', width: 110, pinned: 'left', cellStyle: { fontWeight: 700 } },
-  { headerName: 'Member Name',    field: 'memberName',         minWidth: 170, cellStyle: { fontWeight: 600 } },
+  {
+    headerName: 'Member Name',    field: 'memberName',         minWidth: 190, cellStyle: { fontWeight: 600 },
+    cellRenderer: ({ data, value }) => (
+      <span>
+        {value}
+        {data?.isClosed && <Tag color="orange" style={{ marginLeft: 6 }}>Closed</Tag>}
+      </span>
+    )
+  },
   { headerName: 'Father Name',    field: 'fatherName',         minWidth: 140 },
   { headerName: 'Phone',          field: 'phone',              width: 130 },
   { headerName: 'Village',        field: 'village',            minWidth: 120 },
@@ -91,6 +99,7 @@ const COL_DEFS = [
   { headerName: 'Status',       field: 'status',       width: 100, cellRenderer: StatusRenderer },
   { headerName: 'Pending #',    field: 'pendingCount', width: 105, type: 'numericColumn', cellStyle: { background: '#fef3c7', fontWeight: 600 } },
   { headerName: 'Paid #',       field: 'paidCount',    width: 95,  type: 'numericColumn', cellStyle: { background: '#dcfce7', fontWeight: 600 } },
+  { headerName: 'Closing Date', field: 'closingDate',  width: 125, valueFormatter: ({ value }) => value || '—' },
 ];
 
 const DEFAULT_COL = { sortable: true, filter: true, resizable: true, flex: 1, minWidth: 100 };
@@ -122,6 +131,8 @@ const AllPaymentStatus = ({ agentId, agentInfo }) => {
   const [rowData, setRowData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  // 'active' = chalu members, 'closed' = jinki closing (marriage) ho chuki hai, 'all' = sabhi
+  const [memberTypeFilter, setMemberTypeFilter] = useState('active');
   const gridRef = useRef();
 
   // Set default program once programList loads
@@ -199,6 +210,10 @@ const AllPaymentStatus = ({ agentId, agentInfo }) => {
               programName: programData.name,
               programId,
               memberId,
+              isClosed:    memberDoc.marriage_flag === true,
+              closingDate: memberDoc.marriage_flag === true
+                ? (memberDoc.closing_date || memberDoc.marriage_date || '')
+                : '',
               totalPaid,
               totalPending,
               paidCount,
@@ -221,8 +236,23 @@ const AllPaymentStatus = ({ agentId, agentInfo }) => {
     }
   };
 
+  // ── Active / Closed members alag ─────────────────────────────────────────
+  const activeCount = rowData.filter((r) => !r.isClosed).length;
+  const closedCount = rowData.filter((r) => r.isClosed).length;
+  const displayRows = rowData
+    .filter((r) =>
+      memberTypeFilter === 'active' ? !r.isClosed
+      : memberTypeFilter === 'closed' ? r.isClosed
+      : true
+    )
+    .map((r, i) => ({ ...r, index: i + 1 }));
+  const memberTypeLabel =
+    memberTypeFilter === 'closed' ? 'Closed members'
+    : memberTypeFilter === 'active' ? 'Active members'
+    : 'All members';
+
   // ── Totals ────────────────────────────────────────────────────────────────
-  const totals = rowData.reduce(
+  const totals = displayRows.reduce(
     (acc, r) => ({
       paid:    acc.paid    + (r.totalPaid    || 0),
       pending: acc.pending + (r.totalPending || 0),
@@ -231,12 +261,13 @@ const AllPaymentStatus = ({ agentId, agentInfo }) => {
     }),
     { paid: 0, pending: 0, paidCnt: 0, pendCnt: 0 }
   );
-  const uniqueMembers   = new Set(rowData.map((r) => r.registrationNumber)).size;
-  const uniquePrograms  = new Set(rowData.map((r) => r.programName)).size;
+  const uniqueMembers   = new Set(displayRows.map((r) => r.registrationNumber)).size;
+  const uniquePrograms  = new Set(displayRows.map((r) => r.programName)).size;
 
   const getFileName = () => {
     const name = agentInfo?.displayName?.replace(/\s+/g, '_') || 'Agent';
-    return `${name}_Payment_${dayjs().format('DDMMYYYY')}.pdf`;
+    const type = memberTypeFilter === 'closed' ? '_Closed' : memberTypeFilter === 'active' ? '_Active' : '';
+    return `${name}_Payment${type}_${dayjs().format('DDMMYYYY')}.pdf`;
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -250,7 +281,7 @@ const AllPaymentStatus = ({ agentId, agentInfo }) => {
             Payment Status
           </h2>
           <p style={{ fontSize: 13, color: '#94a3b8', margin: '4px 0 0' }}>
-            {agentInfo?.displayName || 'Agent'} · {rowData.length} records across {uniquePrograms} program{uniquePrograms !== 1 ? 's' : ''}
+            {agentInfo?.displayName || 'Agent'} · {memberTypeLabel} · {displayRows.length} records across {uniquePrograms} program{uniquePrograms !== 1 ? 's' : ''}
           </p>
         </div>
 
@@ -287,7 +318,7 @@ const AllPaymentStatus = ({ agentId, agentInfo }) => {
           </Select>
 
           <button
-            onClick={() => gridRef.current?.api?.exportDataAsCsv({ fileName: 'payment_status.csv' })}
+            onClick={() => gridRef.current?.api?.exportDataAsCsv({ fileName: `payment_status_${memberTypeFilter}.csv` })}
             style={{
               padding: '8px 16px', background: '#10b981', color: '#fff',
               border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer',
@@ -309,8 +340,25 @@ const AllPaymentStatus = ({ agentId, agentInfo }) => {
         </div>
       </div>
 
+      {/* ── Member Type (Active / Closed) ── */}
+      {selectedProgramIds.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#475569' }}>Member Type:</span>
+          <Segmented
+            size="large"
+            value={memberTypeFilter}
+            onChange={setMemberTypeFilter}
+            options={[
+              { label: `Active Members (${activeCount})`, value: 'active' },
+              { label: `Closed Members (${closedCount})`, value: 'closed' },
+              { label: `All (${rowData.length})`, value: 'all' },
+            ]}
+          />
+        </div>
+      )}
+
       {/* ── Summary Cards ── */}
-      {rowData.length > 0 && (
+      {displayRows.length > 0 && (
         <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
           <SummaryCard label="Total Paid"     value={`₹${totals.paid.toLocaleString('en-IN')}`}    color="#059669" />
           <SummaryCard label="Total Pending"  value={`₹${totals.pending.toLocaleString('en-IN')}`} color="#dc2626" />
@@ -343,7 +391,7 @@ const AllPaymentStatus = ({ agentId, agentInfo }) => {
         >
           <AgGridReact
             ref={gridRef}
-            rowData={rowData}
+            rowData={displayRows}
             loading={isLoading}
             defaultColDef={DEFAULT_COL}
             columnDefs={COL_DEFS}
@@ -373,7 +421,7 @@ const AllPaymentStatus = ({ agentId, agentInfo }) => {
             <PDFDownloadLink
               document={
                 <AllPaymentPdf
-                  rowData={rowData}
+                  rowData={displayRows}
                   agentInfo={{
                     ...agentInfo,
                     uid: user?.uid,
@@ -395,7 +443,7 @@ const AllPaymentStatus = ({ agentId, agentInfo }) => {
       >
         <PDFViewer style={{ width: '100%', height: '100vh', border: 'none' }}>
           <AllPaymentPdf
-            rowData={rowData}
+            rowData={displayRows}
             agentInfo={{
               ...agentInfo,
               uid: user?.uid,

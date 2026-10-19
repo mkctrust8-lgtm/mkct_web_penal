@@ -72,8 +72,20 @@ const JOIN_FEES_OPTIONS = [
 ];
 
 // ── helpers ────────────────────────────────────────────────────────────────────
-const countActive = ({ gender, agent, dateRange, joinFees }) => {
+// age group helpers
+const ageGroupLabel = (g) => g ? `${g.startAge}-${g.endAge} वर्ष` : '';
+const memberMatchesAgeGroup = (m, groupValue, ageGroups = []) => {
+    if (groupValue === 'all') return true;
+    if (groupValue === 'none') return !m.ageGroup && !m.ageGroupRange;
+    const g = ageGroups.find(x => x.id === groupValue);
+    if (m.ageGroup && m.ageGroup === groupValue) return true;
+    if (g && m.ageGroupRange && String(m.ageGroupRange).trim() === `${g.startAge}-${g.endAge}`) return true;
+    return false;
+};
+
+const countActive = ({ gender, agent, dateRange, joinFees, ageGroup }) => {
     let n = 0;
+    if (ageGroup && ageGroup !== 'all') n++;
     if (gender   !== 'all')  n++;
     if (agent)               n++;
     if (dateRange)           n++;
@@ -120,6 +132,7 @@ const MemberList = () => {
     const [selectedAgentFilter,  setSelectedAgentFilter]  = useState(null);
     const [dateRange,            setDateRange]            = useState(null);
     const [joinFeesFilter,       setJoinFeesFilter]       = useState('all');
+    const [ageGroupFilter,       setAgeGroupFilter]       = useState('all');
 
     // draft values (inside modal)
     const [draftStatus,          setDraftStatus]          = useState('active');
@@ -127,6 +140,7 @@ const MemberList = () => {
     const [draftAgent,           setDraftAgent]           = useState(null);
     const [draftDateRange,       setDraftDateRange]       = useState(null);
     const [draftJoinFees,        setDraftJoinFees]        = useState('all');
+    const [draftAgeGroup,        setDraftAgeGroup]        = useState('all');
 
     const [JoinFeesMemberListOpen, setJoinFeesMemberListOpen] = useState(false);
     
@@ -140,6 +154,9 @@ const MemberList = () => {
     const { agentsList }     = useSelector(s => s.data);
     const { user }           = useAuth();
     const gridRef            = useRef();
+    const programAgeGroups   = [...(selectedProgram?.ageGroups || [])]
+        .sort((a, b) => (Number(a.startAge) || 0) - (Number(b.startAge) || 0));
+    const selectedAgeGroupObj = programAgeGroups.find(g => g.id === ageGroupFilter);
 
     const [windowWidth, setWindowWidth] = useState(
         typeof window !== 'undefined' ? window.innerWidth : 1200
@@ -147,7 +164,7 @@ const MemberList = () => {
 
     const activeFilterCount = countActive({
         gender: genderFilter, agent: selectedAgentFilter,
-        dateRange, joinFees: joinFeesFilter
+        dateRange, joinFees: joinFeesFilter, ageGroup: ageGroupFilter
     });
 
     const defaultColDef = { sortable: true, filter: true, resizable: true, flex: 1, minWidth: 100 };
@@ -159,6 +176,7 @@ const MemberList = () => {
         setDraftAgent(selectedAgentFilter);
         setDraftDateRange(dateRange);
         setDraftJoinFees(joinFeesFilter);
+        setDraftAgeGroup(ageGroupFilter);
         setIsFilterModalOpen(true);
     };
 
@@ -168,6 +186,7 @@ const MemberList = () => {
         setSelectedAgentFilter(draftAgent);
         setDateRange(draftDateRange);
         setJoinFeesFilter(draftJoinFees);
+        setAgeGroupFilter(draftAgeGroup);
         setIsFilterModalOpen(false);
     };
 
@@ -177,6 +196,7 @@ const MemberList = () => {
         setDraftAgent(null);
         setDraftDateRange(null);
         setDraftJoinFees('all');
+        setDraftAgeGroup('all');
     };
 
     const removeFilter = (key) => {
@@ -184,6 +204,7 @@ const MemberList = () => {
         if (key === 'agent')     setSelectedAgentFilter(null);
         if (key === 'dateRange') setDateRange(null);
         if (key === 'joinFees')  setJoinFeesFilter('all');
+        if (key === 'ageGroup')  setAgeGroupFilter('all');
     };
 
     // ── core filter logic ──────────────────────────────────────────────────────
@@ -194,6 +215,7 @@ const MemberList = () => {
         const ag = opts.agent     ?? selectedAgentFilter;
         const dr = opts.dateRange ?? dateRange;
         const jf = opts.joinFees  ?? joinFeesFilter;
+        const agp = opts.ageGroup ?? ageGroupFilter;
 
         let out = [...data];
 
@@ -213,6 +235,9 @@ const MemberList = () => {
         else if (jf === 'paid')
             out = out.filter(m => !!m.joinFeesDone);
 
+        if (agp && agp !== 'all')
+            out = out.filter(m => memberMatchesAgeGroup(m, agp, selectedProgram?.ageGroups || []));
+
         if (dr?.[0] && dr?.[1]) {
             const start = dr[0].startOf('day');
             const end   = dr[1].endOf('day');
@@ -224,7 +249,7 @@ const MemberList = () => {
         }
 
         return out;
-    }, [statusFilter, genderFilter, selectedAgentFilter, dateRange, joinFeesFilter]);
+    }, [statusFilter, genderFilter, selectedAgentFilter, dateRange, joinFeesFilter, ageGroupFilter, selectedProgram]);
 
     // ── fetch ──────────────────────────────────────────────────────────────────
     const onGridReady = useCallback(async () => {
@@ -249,9 +274,12 @@ const MemberList = () => {
 
     useEffect(() => {
         if (allMembersData.length) setFilteredMembersData(applyFilters(allMembersData));
-    }, [statusFilter, genderFilter, selectedAgentFilter, dateRange, joinFeesFilter, allMembersData, applyFilters]);
+    }, [statusFilter, genderFilter, selectedAgentFilter, dateRange, joinFeesFilter, ageGroupFilter, allMembersData, applyFilters]);
 
     useEffect(() => { onGridReady(); }, [selectedProgram, memberStatusChange]);
+
+    // reset age group filter when program changes (age groups are per program)
+    useEffect(() => { setAgeGroupFilter('all'); setDraftAgeGroup('all'); }, [selectedProgram?.id]);
 
     useEffect(() => {
         const handleResize = () => setWindowWidth(window.innerWidth);
@@ -280,12 +308,12 @@ const MemberList = () => {
     // ── draft preview count ────────────────────────────────────────────────────
     const previewCount = applyFilters(allMembersData, {
         status: draftStatus, gender: draftGender, agent: draftAgent,
-        dateRange: draftDateRange, joinFees: draftJoinFees
+        dateRange: draftDateRange, joinFees: draftJoinFees, ageGroup: draftAgeGroup
     }).length;
 
     const draftActiveCount = countActive({
         gender: draftGender, agent: draftAgent,
-        dateRange: draftDateRange, joinFees: draftJoinFees
+        dateRange: draftDateRange, joinFees: draftJoinFees, ageGroup: draftAgeGroup
     });
 
     // ── build active chip labels for toolbar ───────────────────────────────────
@@ -299,6 +327,7 @@ const MemberList = () => {
         if (genderFilter !== 'all')   parts.push(`Gender: ${genderFilter}`);
         if (selectedAgentFilter)      parts.push(`Agent: ${agentsList?.find(a => a.id === selectedAgentFilter)?.displayName || ''}`);
         if (joinFeesFilter !== 'all') parts.push(`Join Fees: ${joinFeesFilter === 'pending' ? 'Pending' : 'Paid'}`);
+        if (ageGroupFilter !== 'all') parts.push(`Age Group: ${ageGroupFilter === 'none' ? 'Not set' : ageGroupLabel(selectedAgeGroupObj)}`);
         if (dateRange)                parts.push(`Date: ${dateRange[0]?.format('DD/MM/YYYY')} – ${dateRange[1]?.format('DD/MM/YYYY')}`);
         return parts.join(' · ');
     })();
@@ -553,6 +582,12 @@ const MemberList = () => {
                             {joinFeesFilter === 'pending' ? 'Fees Pending' : 'Fees Paid'}
                         </Tag>
                     )}
+                    {ageGroupFilter !== 'all' && (
+                        <Tag closable onClose={() => removeFilter('ageGroup')} color="cyan"
+                            className="h-7 flex items-center text-xs">
+                            Age: {ageGroupFilter === 'none' ? 'Not set' : ageGroupLabel(selectedAgeGroupObj)}
+                        </Tag>
+                    )}
                     {dateRange && (
                         <Tag closable onClose={() => removeFilter('dateRange')} color="orange"
                             className="h-7 flex items-center text-xs">
@@ -561,7 +596,7 @@ const MemberList = () => {
                     )}
                     {activeFilterCount > 0 && (
                         <Button size="small" type="link" icon={<ClearOutlined />}
-                            onClick={() => { setGenderFilter('all'); setSelectedAgentFilter(null); setDateRange(null); setJoinFeesFilter('all'); }}
+                            onClick={() => { setGenderFilter('all'); setSelectedAgentFilter(null); setDateRange(null); setJoinFeesFilter('all'); setAgeGroupFilter('all'); }}
                             className="text-gray-400 hover:text-red-500 px-1 text-xs">
                             Clear all
                         </Button>
@@ -688,6 +723,46 @@ const MemberList = () => {
                         </div>
                     </div>
 
+                    {/* Age Group */}
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                            Age Group
+                        </label>
+                        {programAgeGroups.length === 0 ? (
+                            <div className="text-xs text-gray-400 italic">Is yojna me koi age group set nahi hai</div>
+                        ) : (
+                            <div className="flex flex-wrap gap-2">
+                                {[{ id: 'all', label: 'All' },
+                                  ...programAgeGroups.map(g => ({ id: g.id, label: ageGroupLabel(g) })),
+                                  { id: 'none', label: 'Not set' }
+                                ].map(o => {
+                                    const cnt = o.id === 'all'
+                                        ? null
+                                        : applyFilters(allMembersData, {
+                                            status: draftStatus, gender: draftGender, agent: draftAgent,
+                                            dateRange: draftDateRange, joinFees: draftJoinFees, ageGroup: o.id
+                                        }).length;
+                                    return (
+                                        <button
+                                            key={o.id}
+                                            onClick={() => setDraftAgeGroup(o.id)}
+                                            className={`py-1.5 px-3 rounded-lg border text-sm font-medium transition-all cursor-pointer ${
+                                                draftAgeGroup === o.id
+                                                    ? 'bg-cyan-600 text-white border-cyan-600'
+                                                    : 'bg-white text-gray-600 border-gray-300 hover:border-cyan-400 hover:text-cyan-700'
+                                            }`}
+                                        >
+                                            {o.label}
+                                            {cnt !== null && (
+                                                <span className={`ml-1.5 text-xs ${draftAgeGroup === o.id ? 'text-cyan-100' : 'text-gray-400'}`}>({cnt})</span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+
                     {/* Agent */}
                     <div>
                         <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
@@ -760,6 +835,7 @@ const MemberList = () => {
                             {draftGender !== 'all'    && <Tag color={draftGender==='male'?'blue':'pink'} className="text-xs capitalize">{draftGender}</Tag>}
                             {draftAgent               && <Tag color="purple" className="text-xs">Agent: {agentsList?.find(a=>a.id===draftAgent)?.displayName||draftAgent}</Tag>}
                             {draftJoinFees!=='all'     && <Tag color={draftJoinFees==='pending'?'red':'green'} className="text-xs">{draftJoinFees==='pending'?'Fees Pending':'Fees Paid'}</Tag>}
+                            {draftAgeGroup!=='all'     && <Tag color="cyan" className="text-xs">Age: {draftAgeGroup==='none' ? 'Not set' : ageGroupLabel(programAgeGroups.find(g=>g.id===draftAgeGroup))}</Tag>}
                             {draftDateRange           && <Tag color="orange" className="text-xs">{draftDateRange[0]?.format('DD/MM/YY')} – {draftDateRange[1]?.format('DD/MM/YY')}</Tag>}
                             {draftActiveCount === 0 && draftStatus === 'active' && (
                                 <span className="text-xs text-gray-400 italic">No additional filters</span>

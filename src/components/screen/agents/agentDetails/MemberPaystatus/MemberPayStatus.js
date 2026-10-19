@@ -26,6 +26,7 @@ import {
   Spin,
   Progress,
   Empty,
+  Segmented,
 } from 'antd';
 import {
   EyeOutlined,
@@ -48,7 +49,7 @@ import dayjs from 'dayjs';
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
 import PaymentReportPDF from '../component/pdfcom/PaymentReportPDF';
 import { setSelectedProgram } from '@/redux/slices/commonSlice';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 const { Search } = Input;
@@ -77,6 +78,11 @@ const MemberPayStatus = ({ agentId, agentInfo }) => {
   const [selectedMember, setSelectedMember] = useState(null);
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
   const [filteredData, setFilteredData] = useState([]);
+
+  // Active / Closed member filter
+  // 'active' = chalu members, 'closed' = jinki closing (marriage) ho chuki hai, 'all' = sabhi
+  const [memberTypeFilter, setMemberTypeFilter] = useState('active');
+  const [closedMemberMap, setClosedMemberMap] = useState({}); // memberId -> closing date
 
   // Group filter states
   const [closingGroups, setClosingGroups] = useState([]);
@@ -122,6 +128,40 @@ const MemberPayStatus = ({ agentId, agentInfo }) => {
   useEffect(() => {
     if (selectedProgram?.id && user?.uid) fetchClosingGroups();
   }, [selectedProgram?.id, user?.uid, fetchClosingGroups]);
+
+  // Is agent ke closed members (marriage_flag = true) laao
+  const fetchClosedMembers = useCallback(async () => {
+    if (!user?.uid || !selectedProgram?.id || !agentId) {
+      setClosedMemberMap({});
+      return;
+    }
+    try {
+      const q = query(
+        collection(db, `users/${user.uid}/programs/${selectedProgram.id}/members`),
+        where('agentId', '==', agentId),
+        where('marriage_flag', '==', true)
+      );
+      const snap = await getDocs(q);
+      const map = {};
+      snap.forEach((d) => {
+        const m = d.data();
+        map[d.id] = m.closing_date || m.marriage_date || '';
+      });
+      setClosedMemberMap(map);
+    } catch (error) {
+      console.error('Error fetching closed members:', error);
+      setClosedMemberMap({});
+    }
+  }, [user?.uid, selectedProgram?.id, agentId]);
+
+  useEffect(() => {
+    fetchClosedMembers();
+  }, [fetchClosedMembers]);
+
+  const isClosedRow = useCallback(
+    (row) => row?.marriage_flag === true || closedMemberMap[row?.memberId] !== undefined,
+    [closedMemberMap]
+  );
 
   const handleProgramSelect = useCallback(
     async (programId) => {
@@ -194,6 +234,13 @@ const MemberPayStatus = ({ agentId, agentInfo }) => {
     let filtered = [...reportData];
     let filtersActive = { search: false, status: false, group: false };
 
+    // Active / Closed members alag karo
+    if (memberTypeFilter === 'active') {
+      filtered = filtered.filter((member) => !isClosedRow(member));
+    } else if (memberTypeFilter === 'closed') {
+      filtered = filtered.filter((member) => isClosedRow(member));
+    }
+
     if (searchText && searchText.trim()) {
       filtersActive.search = true;
       const s = searchText.toLowerCase().trim();
@@ -228,7 +275,7 @@ const MemberPayStatus = ({ agentId, agentInfo }) => {
     setActiveFilters(filtersActive);
     setSelectedMembers([]);
     setSelectAll(false);
-  }, [searchText, statusFilter, reportData]);
+  }, [searchText, statusFilter, reportData, memberTypeFilter, isClosedRow]);
 
   useEffect(() => {
     applyFilters();
@@ -238,6 +285,7 @@ const MemberPayStatus = ({ agentId, agentInfo }) => {
     setSearchText('');
     setStatusFilter('all');
     setSelectedGroupId(null);
+    setMemberTypeFilter('active');
     setFilteredData(reportData);
     setSelectedMembers([]);
     setSelectAll(false);
@@ -351,6 +399,11 @@ const MemberPayStatus = ({ agentId, agentInfo }) => {
                   style={{ marginTop: 4, fontSize: 10 }}
                 >
                   {record.groupInfo.groupName}
+                </Tag>
+              )}
+              {isClosedRow(record) && (
+                <Tag color="orange" style={{ marginTop: 4, fontSize: 10 }}>
+                  Closed{closedMemberMap[record.memberId] ? ` · ${closedMemberMap[record.memberId]}` : ''}
                 </Tag>
               )}
             </div>
@@ -471,7 +524,7 @@ const MemberPayStatus = ({ agentId, agentInfo }) => {
         ),
       },
     ],
-    [calculateMemberStats]
+    [calculateMemberStats, isClosedRow, closedMemberMap]
   );
 
   const marriageColumns = useMemo(
@@ -553,6 +606,38 @@ const MemberPayStatus = ({ agentId, agentInfo }) => {
     []
   );
 
+  // ── Active / Closed counts & summary ──
+  const activeCount = reportData.filter((r) => !isClosedRow(r)).length;
+  const closedCount = reportData.filter((r) => isClosedRow(r)).length;
+
+  const typeRows =
+    memberTypeFilter === 'all'
+      ? reportData
+      : reportData.filter((r) =>
+          memberTypeFilter === 'closed' ? isClosedRow(r) : !isClosedRow(r)
+        );
+
+  const effectiveSummary = useMemo(() => {
+    if (memberTypeFilter === 'all') return summary;
+    let totalPending = 0, totalPaid = 0, totalPendingAmount = 0, totalPaidAmount = 0;
+    typeRows.forEach((r) => {
+      (r.marriages || []).forEach((m) => {
+        const amt = Number(m.amount || 0);
+        if (m.status === 'paid') { totalPaid++; totalPaidAmount += amt; }
+        else if (m.status === 'pending') { totalPending++; totalPendingAmount += amt; }
+      });
+    });
+    return {
+      ...summary,
+      totalMembers: typeRows.length,
+      totalPending,
+      totalPaid,
+      totalPendingAmount,
+      totalPaidAmount,
+      totalAmount: totalPendingAmount + totalPaidAmount,
+    };
+  }, [memberTypeFilter, summary, typeRows]);
+
   const getFileName = useCallback(() => {
     const agentName = agentInfo?.displayName?.replace(/\s+/g, '_') || 'Agent';
     const programName = selectedProgram?.name?.replace(/\s+/g, '_') || 'Program';
@@ -565,8 +650,11 @@ const MemberPayStatus = ({ agentId, agentInfo }) => {
     const memberCount =
       selectionMode === 'all' ? filteredData.length : selectedMembers.length;
     const groupSuffix = groupName ? `_${groupName}` : '';
-    return `${agentName}_Payment_Report${groupSuffix}_${programName}_${memberCount}Members_${date}.pdf`;
+    const typeSuffix =
+      memberTypeFilter === 'closed' ? '_Closed' : memberTypeFilter === 'active' ? '_Active' : '';
+    return `${agentName}_Payment_Report${typeSuffix}${groupSuffix}_${programName}_${memberCount}Members_${date}.pdf`;
   }, [
+    memberTypeFilter,
     agentInfo,
     selectedProgram,
     selectionMode,
@@ -667,35 +755,35 @@ const MemberPayStatus = ({ agentId, agentInfo }) => {
         {[
           {
             label: 'Total Members',
-            value: summary.totalMembers,
+            value: effectiveSummary.totalMembers,
             color: '#1677ff',
             prefix: <UserOutlined />,
             format: false,
           },
           {
             label: 'Pending Payments',
-            value: summary.totalPending,
+            value: effectiveSummary.totalPending,
             color: '#d46b08',
             prefix: <ClockCircleOutlined />,
             format: false,
           },
           {
             label: 'Paid Payments',
-            value: summary.totalPaid,
+            value: effectiveSummary.totalPaid,
             color: '#389e0d',
             prefix: <CheckCircleOutlined />,
             format: false,
           },
           {
             label: 'Pending Amount',
-            value: summary.totalPendingAmount,
+            value: effectiveSummary.totalPendingAmount,
             color: '#cf1322',
             prefix: <MoneyCollectOutlined />,
             format: true,
           },
           {
             label: 'Total Collected',
-            value: summary.totalPaidAmount,
+            value: effectiveSummary.totalPaidAmount,
             color: '#389e0d',
             prefix: <MoneyCollectOutlined />,
             format: true,
@@ -749,6 +837,20 @@ const MemberPayStatus = ({ agentId, agentInfo }) => {
             gap: 10,
           }}
         >
+          {/* Row 0: Active / Closed members */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#475569' }}>Member Type:</span>
+            <Segmented
+              value={memberTypeFilter}
+              onChange={setMemberTypeFilter}
+              options={[
+                { label: `Active Members (${activeCount})`, value: 'active' },
+                { label: `Closed Members (${closedCount})`, value: 'closed' },
+                { label: `All (${reportData.length})`, value: 'all' },
+              ]}
+            />
+          </div>
+
           {/* Row 1: search + group + status + clear */}
           <div
             style={{
@@ -881,9 +983,9 @@ const MemberPayStatus = ({ agentId, agentInfo }) => {
               </span>{' '}
               of{' '}
               <span style={{ fontWeight: 600, color: '#1a1a1a' }}>
-                {reportData.length}
+                {typeRows.length}
               </span>{' '}
-              members
+              {memberTypeFilter === 'closed' ? 'closed ' : memberTypeFilter === 'active' ? 'active ' : ''}members
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1204,7 +1306,7 @@ const MemberPayStatus = ({ agentId, agentInfo }) => {
               document={
                 <PaymentReportPDF
                   data={getExportData()}
-                  summary={summary}
+                  summary={effectiveSummary}
                   agentInfo={agentInfo}
                   programInfo={selectedProgram}
                   filters={{
@@ -1240,7 +1342,7 @@ const MemberPayStatus = ({ agentId, agentInfo }) => {
         >
           <PaymentReportPDF
             data={getExportData()}
-            summary={summary}
+            summary={effectiveSummary}
             agentInfo={agentInfo}
             programInfo={selectedProgram}
             filters={{
