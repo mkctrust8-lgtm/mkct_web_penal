@@ -520,19 +520,16 @@ const Certificate = ({data,selectedProgram}) => (
                     <Text style={styles.colon}>:</Text>
                     <Text style={styles.value}>₹ {data?.payAmount} /-</Text>
                   </view>
-                    <view style={[styles.fieldGroup,styles.OfferJoinfees]}>
-                    <Text style={styles.label}> जॉइन ऑफर</Text>
-                    <Text style={styles.colon}>:</Text>
-                    <Text style={styles.value}>
-                            {data?.joinInOffer === 'full'
+                      <View style={styles.fieldGroup}>
+                <Text style={styles.label}>जॉइन ऑफर:</Text>
+                <Text style={[styles.value, { minWidth: 110 }]}> {data?.joinInOffer === 'full'
         ? 'Full (100%)'
         : data?.joinInOffer === 'half'
         ? 'Half (50%)'
         : data?.joinInOffer === 'custom'
         ? `₹ ${data?.joinInOfferCustomAmount || 0}`
-        : data?.joinInOffer || '-'}
-                    </Text>
-                  </view>
+        : data?.joinInOffer || '-'}</Text>
+              </View>
             </View>
           </View>
           <View style={styles.DashBorder}>
